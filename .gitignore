@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment variables — NEVER commit these
+.env
+*.env.local
+
+# Database — regenerated on startup
+server/youmeuss.db
+server/youmeuss.db-wal
+server/youmeuss.db-shm
+
+# Uploaded videos — stored on server disk (use Cloudinary for production)
+server/uploads/
+
+# Build output
+client/dist/
+client/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
