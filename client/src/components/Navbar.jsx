@@ -1,9 +1,11 @@
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isInRoom = location.pathname.startsWith('/room/');
 
   const handleLogout = () => {
     logout();
@@ -15,10 +17,26 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <span className="text-2xl">🎬</span>
-            <span className="text-xl font-bold gradient-brand-text">YouMeUss</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-2 no-underline">
+              <span className="text-2xl">🎬</span>
+              <span className="text-xl font-bold gradient-brand-text">YouMeUss</span>
+            </Link>
+            {/* Home button — only shown inside a room */}
+            {isInRoom && (
+              <Link
+                to="/"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                           text-text-muted hover:text-text-primary bg-surface-600 hover:bg-surface-500
+                           border border-surface-400/20 transition-all duration-200 no-underline"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Home
+              </Link>
+            )}
+          </div>
 
 
           {/* Right side */}

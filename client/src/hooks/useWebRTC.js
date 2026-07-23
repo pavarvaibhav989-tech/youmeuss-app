@@ -1,10 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSocket } from '../lib/socket';
 
+// ICE servers: STUN for local/same-network + TURN for cross-network calls
+// OpenRelay is a free public TURN server — works well for production use
 const ICE_SERVERS = {
   iceServers: [
+    // STUN servers (fast, no relay)
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    // TURN servers (relay — works across all network types)
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
   ],
 };
 

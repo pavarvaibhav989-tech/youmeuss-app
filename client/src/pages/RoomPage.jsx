@@ -139,24 +139,11 @@ export default function RoomPage() {
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left: Video Area — scrollable internally */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* Video Player */}
-            <div className="flex-shrink-0">
-              <VideoPlayer
-                videoUrl={videoUrl}
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                isSyncing={isSyncing}
-                isHost={isHost}
-                onPlay={play}
-                onPause={pause}
-                onSeek={seek}
-              />
-            </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-            {/* Video Controls - only for host */}
+            {/* Video Controls - ABOVE player so always visible without scrolling */}
             {isHost && (
-              <div className="mt-4 space-y-3 flex-shrink-0">
+              <div className="space-y-2 flex-shrink-0">
                 {/* URL Input */}
                 <form onSubmit={handleLoadUrl} className="flex gap-2">
                   <input
@@ -183,14 +170,29 @@ export default function RoomPage() {
               </div>
             )}
 
-            {/* Non-host sees host info */}
+            {/* Non-host waiting state */}
             {!isHost && !videoUrl && (
-              <div className="mt-4 glass rounded-xl p-4 text-center">
+              <div className="glass rounded-xl p-4 text-center flex-shrink-0">
                 <p className="text-sm text-text-secondary">
-                  Waiting for <span className="text-brand-400 font-medium">{host?.username}</span> to load a video...
+                  ⏳ Waiting for <span className="text-brand-400 font-medium">{host?.username}</span> to load a video...
                 </p>
               </div>
             )}
+
+            {/* Video Player */}
+            <div className="flex-shrink-0">
+              <VideoPlayer
+                videoUrl={videoUrl}
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                isSyncing={isSyncing}
+                isHost={isHost}
+                onPlay={play}
+                onPause={pause}
+                onSeek={seek}
+              />
+            </div>
+
           </div>
         </div>
 
