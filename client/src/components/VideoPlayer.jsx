@@ -1,5 +1,4 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import ReactPlayer from 'react-player';
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
