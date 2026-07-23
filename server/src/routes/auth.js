@@ -39,7 +39,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    const existing = queryOne('SELECT id FROM users WHERE email = ? OR username = ?', [email, username]);
+    const existing = await queryOne('SELECT id FROM users WHERE email = ? OR username = ?', [email, username]);
     if (existing) {
       return res.status(409).json({ error: 'User with this email or username already exists' });
     }
@@ -47,7 +47,7 @@ router.post('/register', async (req, res) => {
     const id = uuidv4();
     const password_hash = await bcrypt.hash(password, 12);
 
-    runSql('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)', [
+    await runSql('INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)', [
       id, username, email, password_hash,
     ]);
 
@@ -72,7 +72,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = queryOne('SELECT * FROM users WHERE email = ?', [email]);
+    const user = await queryOne('SELECT * FROM users WHERE email = ?', [email]);
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
@@ -96,9 +96,9 @@ router.post('/login', async (req, res) => {
 /**
  * GET /api/auth/me
  */
-router.get('/me', authenticate, (req, res) => {
+router.get('/me', authenticate, async (req, res) => {
   try {
-    const user = queryOne('SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?', [req.user.id]);
+    const user = await queryOne('SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?', [req.user.id]);
 
     if (!user) {
       return res.status(401).json({ error: 'User not found — session expired' });
@@ -114,7 +114,7 @@ router.get('/me', authenticate, (req, res) => {
 /**
  * POST /api/auth/refresh
  */
-router.post('/refresh', (req, res) => {
+router.post('/refresh', async (req, res) => {
   try {
     const { refreshToken } = req.body;
 
@@ -124,8 +124,7 @@ router.post('/refresh', (req, res) => {
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-    // Verify user still exists in DB (handles server restart wiping in-memory DB)
-    const dbUser = queryOne('SELECT id, username, email FROM users WHERE id = ?', [decoded.id]);
+    const dbUser = await queryOne('SELECT id, username, email FROM users WHERE id = ?', [decoded.id]);
     if (!dbUser) {
       return res.status(401).json({ error: 'User no longer exists — please register again' });
     }

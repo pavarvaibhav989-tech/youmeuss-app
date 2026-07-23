@@ -7,7 +7,7 @@ const router = Router();
 /**
  * GET /api/rooms/:id/messages
  */
-router.get('/:id/messages', authenticate, (req, res) => {
+router.get('/:id/messages', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const { limit = 50, before } = req.query;
@@ -15,7 +15,7 @@ router.get('/:id/messages', authenticate, (req, res) => {
     let messages;
 
     if (before) {
-      messages = queryAll(`
+      messages = await queryAll(`
         SELECT m.id, m.message, m.created_at, m.user_id,
                u.username, u.avatar_url
         FROM messages m
@@ -25,7 +25,7 @@ router.get('/:id/messages', authenticate, (req, res) => {
         LIMIT ?
       `, [id, before, parseInt(limit)]);
     } else {
-      messages = queryAll(`
+      messages = await queryAll(`
         SELECT m.id, m.message, m.created_at, m.user_id,
                u.username, u.avatar_url
         FROM messages m

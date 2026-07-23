@@ -9,7 +9,7 @@ export default function chatHandler(io, socket) {
   /**
    * CHAT_MESSAGE — User sends a chat message.
    */
-  socket.on('CHAT_MESSAGE', ({ roomId, message }) => {
+  socket.on('CHAT_MESSAGE', async ({ roomId, message }) => {
     if (!message || !message.trim() || !roomId) return;
 
     const user = socket.user;
@@ -18,7 +18,7 @@ export default function chatHandler(io, socket) {
 
     // Persist to database
     try {
-      runSql('INSERT INTO messages (id, room_id, user_id, message, created_at) VALUES (?, ?, ?, ?, ?)', [
+      await runSql('INSERT INTO messages (id, room_id, user_id, message, created_at) VALUES (?, ?, ?, ?, ?)', [
         id, roomId, user.id, message.trim(), created_at,
       ]);
     } catch (err) {

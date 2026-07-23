@@ -20,24 +20,25 @@ function generateRoomCode() {
 /**
  * POST /api/rooms
  */
-router.post('/', authenticate, (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const id = uuidv4();
     let room_code = generateRoomCode();
 
-    while (queryOne('SELECT id FROM rooms WHERE room_code = ?', [room_code])) {
+    // Ensure unique room code
+    while (await queryOne('SELECT id FROM rooms WHERE room_code = ?', [room_code])) {
       room_code = generateRoomCode();
     }
 
-    runSql('INSERT INTO rooms (id, room_code, host_user_id, status) VALUES (?, ?, ?, ?)', [
+    await runSql('INSERT INTO rooms (id, room_code, host_user_id, status) VALUES (?, ?, ?, ?)', [
       id, room_code, req.user.id, 'active',
     ]);
 
-    runSql('INSERT INTO participants (id, room_id, user_id) VALUES (?, ?, ?)', [
+    await runSql('INSERT INTO participants (id, room_id, user_id) VALUES (?, ?, ?)', [
       uuidv4(), id, req.user.id,
     ]);
 
-    const room = queryOne('SELECT * FROM rooms WHERE id = ?', [id]);
+    const room = await queryOne('SELECT * FROM rooms WHERE id = ?', [id]);
 
     res.status(201).json({ room });
   } catch (err) {
@@ -49,24 +50,24 @@ router.post('/', authenticate, (req, res) => {
 /**
  * GET /api/rooms/:id
  */
-router.get('/:id', authenticate, (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const room = queryOne('SELECT * FROM rooms WHERE id = ? OR room_code = ?', [id, id]);
+    const room = await queryOne('SELECT * FROM rooms WHERE id = ? OR room_code = ?', [id, id]);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
     }
 
-    const participants = queryAll(`
+    const participants = await queryAll(`
       SELECT u.id, u.username, u.avatar_url, p.joined_at
       FROM participants p
       JOIN users u ON p.user_id = u.id
       WHERE p.room_id = ?
     `, [room.id]);
 
-    const host = queryOne('SELECT id, username, avatar_url FROM users WHERE id = ?', [room.host_user_id]);
+    const host = await queryOne('SELECT id, username, avatar_url FROM users WHERE id = ?', [room.host_user_id]);
 
     res.json({ room, participants, host });
   } catch (err) {
@@ -78,11 +79,11 @@ router.get('/:id', authenticate, (req, res) => {
 /**
  * POST /api/rooms/:id/join
  */
-router.post('/:id/join', authenticate, (req, res) => {
+router.post('/:id/join', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const room = queryOne('SELECT * FROM rooms WHERE id = ? OR room_code = ?', [id, id]);
+    const room = await queryOne('SELECT * FROM rooms WHERE id = ? OR room_code = ?', [id, id]);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
@@ -92,17 +93,17 @@ router.post('/:id/join', authenticate, (req, res) => {
       return res.status(400).json({ error: 'Room is no longer active' });
     }
 
-    const existing = queryOne('SELECT id FROM participants WHERE room_id = ? AND user_id = ?', [
+    const existing = await queryOne('SELECT id FROM participants WHERE room_id = ? AND user_id = ?', [
       room.id, req.user.id,
     ]);
 
     if (!existing) {
-      runSql('INSERT INTO participants (id, room_id, user_id) VALUES (?, ?, ?)', [
+      await runSql('INSERT INTO participants (id, room_id, user_id) VALUES (?, ?, ?)', [
         uuidv4(), room.id, req.user.id,
       ]);
     }
 
-    const participants = queryAll(`
+    const participants = await queryAll(`
       SELECT u.id, u.username, u.avatar_url, p.joined_at
       FROM participants p
       JOIN users u ON p.user_id = u.id
@@ -119,11 +120,11 @@ router.post('/:id/join', authenticate, (req, res) => {
 /**
  * DELETE /api/rooms/:id
  */
-router.delete('/:id', authenticate, (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const room = queryOne('SELECT * FROM rooms WHERE id = ?', [id]);
+    const room = await queryOne('SELECT * FROM rooms WHERE id = ?', [id]);
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found' });
@@ -133,7 +134,7 @@ router.delete('/:id', authenticate, (req, res) => {
       return res.status(403).json({ error: 'Only the host can delete this room' });
     }
 
-    runSql('DELETE FROM rooms WHERE id = ?', [id]);
+    await runSql('DELETE FROM rooms WHERE id = ?', [id]);
 
     res.json({ message: 'Room deleted successfully' });
   } catch (err) {

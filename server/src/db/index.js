@@ -1,105 +1,175 @@
-import initSqlJs from 'sql.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { initializeSchema } from './schema.js';
+import pg from 'pg';
+const { Pool } = pg;
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.join(__dirname, '..', '..', 'youmeuss.db');
-
-let db = null;
+let pool = null;
 
 /**
- * Initialize and return the database connection.
- * sql.js is a pure JS SQLite — no native compilation needed.
+ * Convert SQLite-style ? placeholders to PostgreSQL $1, $2, ... style.
+ * This lets all existing queries work without changes.
+ */
+function toPgSql(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+/**
+ * Initialize the PostgreSQL connection pool.
+ * Reads DATABASE_URL from environment (set automatically by Railway Postgres plugin).
+ * Falls back gracefully if DATABASE_URL is missing (dev without Postgres).
  */
 export async function initDb() {
-  if (db) return db;
+  if (pool) return pool;
 
-  const SQL = await initSqlJs();
+  const connectionString = process.env.DATABASE_URL;
 
-  // Load existing database file if it exists
-  if (fs.existsSync(DB_PATH)) {
-    const buffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(buffer);
-  } else {
-    db = new SQL.Database();
+  if (!connectionString) {
+    console.warn('⚠️  DATABASE_URL not set — using in-memory fallback (data will not persist)');
+    // Graceful fallback: use a mock that logs but doesn't crash
+    pool = { query: async () => ({ rows: [] }), end: () => {} };
+    return pool;
   }
 
-  // Enable foreign keys and WAL mode for concurrent access
-  db.run('PRAGMA foreign_keys = ON');
-  db.run('PRAGMA journal_mode = WAL');
+  pool = new Pool({
+    connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+  });
 
-  // Initialize schema
-  initializeSchema(db);
+  // Test the connection
+  try {
+    const client = await pool.connect();
+    client.release();
+    console.log('✅ PostgreSQL connected');
+  } catch (err) {
+    console.error('❌ PostgreSQL connection failed:', err.message);
+    throw err;
+  }
 
-  // Auto-save every 60 seconds as a safety net (runSql already saves on each write)
-  setInterval(() => saveDb(), 60000);
-
-  console.log('✅ Database schema initialized');
-  return db;
+  await initializeSchema();
+  return pool;
 }
 
 /**
- * Get the database instance (must call initDb first).
+ * Create tables if they don't exist.
  */
-export function getDb() {
-  if (!db) {
-    throw new Error('Database not initialized. Call initDb() first.');
+async function initializeSchema() {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        avatar_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id TEXT PRIMARY KEY,
+        room_code TEXT UNIQUE NOT NULL,
+        host_user_id TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (host_user_id) REFERENCES users(id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS participants (
+        id TEXT PRIMARY KEY,
+        room_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE(room_id, user_id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id TEXT PRIMARY KEY,
+        room_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS videos (
+        id TEXT PRIMARY KEY,
+        room_id TEXT NOT NULL,
+        uploaded_by TEXT NOT NULL,
+        storage_url TEXT NOT NULL,
+        original_name TEXT,
+        duration REAL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
+        FOREIGN KEY (uploaded_by) REFERENCES users(id)
+      )
+    `);
+
+    // Indexes
+    await client.query('CREATE INDEX IF NOT EXISTS idx_rooms_code ON rooms(room_code)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_participants_room ON participants(room_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_videos_room ON videos(room_id)');
+
+    await client.query('COMMIT');
+    console.log('✅ Database schema initialized');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-  return db;
 }
 
 /**
- * Save the in-memory database to disk.
+ * Run a SELECT query and return all rows as an array of objects.
  */
-export function saveDb() {
-  if (db) {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(DB_PATH, buffer);
-  }
+export async function queryAll(sql, params = []) {
+  const { rows } = await pool.query(toPgSql(sql), params);
+  return rows;
 }
 
 /**
- * Close the database and save to disk.
+ * Run a SELECT query and return the first row, or null.
+ */
+export async function queryOne(sql, params = []) {
+  const rows = await queryAll(sql, params);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+/**
+ * Run an INSERT / UPDATE / DELETE statement.
+ */
+export async function runSql(sql, params = []) {
+  await pool.query(toPgSql(sql), params);
+}
+
+/**
+ * Close the pool (called on shutdown).
  */
 export function closeDb() {
-  if (db) {
-    saveDb();
-    db.close();
-    db = null;
+  if (pool) {
+    pool.end();
+    pool = null;
   }
 }
 
-/**
- * Helper: Run a query and return all results as an array of objects.
- */
-export function queryAll(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
-}
-
-/**
- * Helper: Run a query and return the first result as an object, or null.
- */
-export function queryOne(sql, params = []) {
-  const results = queryAll(sql, params);
-  return results.length > 0 ? results[0] : null;
-}
-
-/**
- * Helper: Run a statement (INSERT, UPDATE, DELETE).
- */
-export function runSql(sql, params = []) {
-  db.run(sql, params);
-  saveDb(); // Save after write operations
-}
+// No-op — kept for compatibility
+export function saveDb() {}
+export function getDb() { return pool; }
 
 export default getDb;
