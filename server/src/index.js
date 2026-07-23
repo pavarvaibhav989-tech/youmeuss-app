@@ -10,6 +10,7 @@ import fs from 'fs';
 
 import { initDb, closeDb } from './db/index.js';
 import { initializeSockets } from './sockets/index.js';
+import { startCleanupSchedule } from './jobs/cleanup.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import videoRoutes from './routes/videos.js';
@@ -88,8 +89,10 @@ initializeSockets(io);
 
 // ─── Start Server ────────────────────────────────────────
 async function start() {
-  // Initialize database (async for sql.js WASM loading)
   await initDb();
+
+  // Start background job: clean up rooms inactive for > 7 days
+  startCleanupSchedule();
 
   httpServer.listen(PORT, () => {
     console.log(`
