@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './components/Toast';
 import Navbar from './components/Navbar';
-import ParticleBackground from './components/ParticleBackground';
 import api from './lib/api';
 import './index.css';
+
+// Lazy-load Three.js particle background — renders after critical content
+// so the page text/buttons appear instantly without waiting for 172KB of Three.js
+const ParticleBackground = lazy(() => import('./components/ParticleBackground'));
 
 export default function App() {
   const [roomCode, setRoomCode] = useState('');
@@ -71,7 +74,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface-900 flex flex-col">
-      <ParticleBackground />
+      {/* Particles load after main content — null fallback = no flash */}
+      <Suspense fallback={null}>
+        <ParticleBackground />
+      </Suspense>
       <div className="relative z-10 flex flex-col flex-1">
       <Navbar />
 
