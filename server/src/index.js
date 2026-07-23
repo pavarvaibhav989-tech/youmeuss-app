@@ -3,6 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -26,6 +27,28 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const uploadsDir = path.join(__dirname, '..', 'uploads', 'videos');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
+// ─── Rate Limiters ────────────────────────────────────────
+
+// Strict limiter for auth endpoints — prevents brute force & spam registration
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 10,                     // 10 attempts per IP per window
+  standardHeaders: true,       // Return Retry-After header
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  skip: (req) => process.env.NODE_ENV === 'development', // No limit in dev
+});
+
+// General API limiter — prevents abuse of other endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 minutes
+  max: 200,                    // 200 requests per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please slow down.' },
+  skip: (req) => process.env.NODE_ENV === 'development',
+});
+
 // ─── Middleware ───────────────────────────────────────────
 app.use(cors({
   origin: CLIENT_URL,
@@ -42,10 +65,10 @@ app.use('/uploads', (req, res, next) => {
 }, express.static(path.join(__dirname, '..', 'uploads')));
 
 // ─── Routes ──────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/rooms', roomRoutes);
-app.use('/api/videos', videoRoutes);
-app.use('/api/rooms', messageRoutes);
+app.use('/api/auth', authLimiter, authRoutes);   // Strict: 10/15min
+app.use('/api/rooms', apiLimiter, roomRoutes);   // Moderate: 200/15min
+app.use('/api/videos', apiLimiter, videoRoutes);
+app.use('/api/rooms', apiLimiter, messageRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
