@@ -1,21 +1,46 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSocket } from '../lib/socket';
+import api from '../lib/api';
 
 /**
  * Hook for real-time chat functionality.
+ * Loads the last 50 messages from the DB on mount, then appends
+ * live messages via socket so history is always visible on join.
  */
 export function useChat(roomId) {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // ── Load chat history on room join ────────────────────────────────────────
+  useEffect(() => {
+    if (!roomId) return;
+
+    api.get(`/rooms/${roomId}/messages?limit=50`)
+      .then(({ data }) => {
+        setMessages(data.messages || []);
+      })
+      .catch((err) => {
+        console.warn('[useChat] Could not load message history:', err.message);
+      })
+      .finally(() => {
+        setHistoryLoaded(true);
+      });
+  }, [roomId]);
+
+  // ── Real-time socket listeners ────────────────────────────────────────────
   useEffect(() => {
     const socket = getSocket();
     socketRef.current = socket;
 
     const handleMessage = (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        // Deduplicate — socket may echo a message already in history
+        if (prev.find((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
     };
 
     const handleTyping = ({ userId, username, isTyping }) => {
@@ -62,6 +87,7 @@ export function useChat(roomId) {
   return {
     messages,
     typingUsers,
+    historyLoaded,
     sendMessage,
     sendTyping,
     setMessages,
