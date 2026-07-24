@@ -18,6 +18,32 @@ function generateRoomCode() {
 }
 
 /**
+ * GET /api/rooms — list rooms the current user has joined or hosted
+ */
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const rooms = await queryAll(`
+      SELECT DISTINCT
+        r.id, r.room_code, r.host_user_id, r.status, r.created_at,
+        h.username AS host_username,
+        (SELECT COUNT(*) FROM participants p2 WHERE p2.room_id = r.id) AS participant_count,
+        (SELECT MAX(m.created_at) FROM messages m WHERE m.room_id = r.id) AS last_message_at
+      FROM rooms r
+      JOIN participants p ON p.room_id = r.id
+      JOIN users h ON h.id = r.host_user_id
+      WHERE p.user_id = ?
+      ORDER BY COALESCE(last_message_at, r.created_at) DESC
+      LIMIT 20
+    `, [req.user.id]);
+
+    res.json({ rooms });
+  } catch (err) {
+    console.error('List rooms error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
  * POST /api/rooms
  */
 router.post('/', authenticate, async (req, res) => {
@@ -46,6 +72,7 @@ router.post('/', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 /**
  * GET /api/rooms/:id

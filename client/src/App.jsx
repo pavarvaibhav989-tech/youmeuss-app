@@ -1,5 +1,5 @@
-import { useState, lazy, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, lazy, Suspense, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './components/Toast';
 import Navbar from './components/Navbar';
@@ -13,9 +13,18 @@ const ParticleBackground = lazy(() => import('./components/ParticleBackground'))
 export default function App() {
   const [roomCode, setRoomCode] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
+  const [myRooms, setMyRooms] = useState([]);
   const { isAuthenticated } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
+
+  // Load user's existing rooms
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.get('/rooms')
+      .then(({ data }) => setMyRooms(data.rooms || []))
+      .catch(() => {}); // silently ignore — not critical
+  }, [isAuthenticated]);
 
   const createRoom = async () => {
     if (!isAuthenticated) {
@@ -154,6 +163,45 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {/* Your Rooms — only shown to logged-in users with existing rooms */}
+      {isAuthenticated && myRooms.length > 0 && (
+        <section className="px-4 pb-6 relative z-10">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">
+              🕐 Your Recent Rooms
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {myRooms.slice(0, 6).map((room) => (
+                <button
+                  key={room.id}
+                  onClick={() => navigate(`/room/${room.room_code}`)}
+                  className="glass rounded-xl p-4 text-left group hover:border-brand-500/30
+                             transition-all duration-200 cursor-pointer border border-surface-400/10
+                             hover:bg-surface-700/30 w-full"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-mono text-base font-bold text-brand-400 tracking-widest">
+                      {room.room_code}
+                    </span>
+                    <span className="text-xs text-text-muted">
+                      {room.participant_count} 👤
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-muted">
+                    Hosted by <span className="text-text-secondary">{room.host_username}</span>
+                  </p>
+                  <p className="text-[10px] text-text-muted mt-1">
+                    Last active {room.last_message_at
+                      ? new Date(room.last_message_at).toLocaleDateString()
+                      : new Date(room.created_at).toLocaleDateString()}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Features Section */}
       <section className="px-4 pb-20 relative z-10">
