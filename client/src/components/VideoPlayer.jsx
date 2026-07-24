@@ -33,27 +33,120 @@ function normalizeUrl(url) {
   return trimmed || null;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── YouTube IFrame Player API (singleton loader) ─────────────────────────────
+
+let ytApiLoaded = false;
+const ytApiQueue = [];
 
 /**
- * YouTube embed via native iframe — bypasses all ReactPlayer issues.
- * Supports autoplay sync via postMessage YouTube Player API.
+ * Load the YouTube IFrame Player API script exactly once.
+ * Returns a promise that resolves when window.YT is available.
  */
-function YouTubeEmbed({ ytId, isSyncing }) {
-  const iframeRef = useRef(null);
+function loadYTApi() {
+  return new Promise((resolve) => {
+    if (ytApiLoaded && window.YT?.Player) { resolve(); return; }
+    ytApiQueue.push(resolve);
+    if (!document.getElementById('yt-iframe-api-script')) {
+      const tag = document.createElement('script');
+      tag.id = 'yt-iframe-api-script';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        ytApiLoaded = true;
+        if (prev) prev();
+        ytApiQueue.forEach(r => r());
+        ytApiQueue.length = 0;
+      };
+    }
+  });
+}
 
-  const embedSrc = `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
+/**
+ * YouTube player using the official IFrame Player API.
+ *
+ * HOST:   Player state changes (play/pause) trigger onPlay/onPause callbacks
+ *         which propagate to other participants via socket.
+ * CLIENT: Responds to isPlaying/currentTime/isSyncing props by commanding
+ *         the player to play, pause, or seek.
+ */
+function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay, onPause }) {
+  const wrapperRef = useRef(null);
+  const playerRef  = useRef(null);
+
+  // Keep latest callbacks + flags in refs so stale closures never capture old values
+  const isHostRef  = useRef(isHost);
+  const onPlayRef  = useRef(onPlay);
+  const onPauseRef = useRef(onPause);
+  useEffect(() => { isHostRef.current  = isHost;  }, [isHost]);
+  useEffect(() => { onPlayRef.current  = onPlay;  }, [onPlay]);
+  useEffect(() => { onPauseRef.current = onPause; }, [onPause]);
+
+  // ── Initialize YT player when ytId changes ─────────────────────────────────
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+
+    // Create a fresh mount-point div inside the wrapper
+    wrapperRef.current.innerHTML = '';
+    const mount = document.createElement('div');
+    wrapperRef.current.appendChild(mount);
+
+    let player;
+
+    loadYTApi().then(() => {
+      if (!wrapperRef.current) return; // component unmounted while API was loading
+
+      player = new window.YT.Player(mount, {
+        videoId: ytId,
+        width: '100%',
+        height: '100%',
+        playerVars: { rel: 0, modestbranding: 1 },
+        events: {
+          onReady() {
+            playerRef.current = player;
+          },
+          onStateChange({ data }) {
+            // Only the host reports state changes to the room
+            if (!isHostRef.current || !playerRef.current) return;
+            const YT = window.YT;
+            if (data === YT.PlayerState.PLAYING) {
+              onPlayRef.current?.(playerRef.current.getCurrentTime());
+            } else if (data === YT.PlayerState.PAUSED) {
+              onPauseRef.current?.(playerRef.current.getCurrentTime());
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      playerRef.current = null;
+      try { player?.destroy?.(); } catch (_) {}
+    };
+  }, [ytId]);
+
+  // ── Sync play/pause state for non-host participants ────────────────────────
+  useEffect(() => {
+    const p = playerRef.current;
+    if (!p || isHost) return; // host controls via native YT controls
+    try {
+      isPlaying ? p.playVideo() : p.pauseVideo();
+    } catch (_) {}
+  }, [isPlaying, isHost]);
+
+  // ── Seek when a sync correction arrives ───────────────────────────────────
+  useEffect(() => {
+    const p = playerRef.current;
+    if (!p || !isSyncing || currentTime == null) return;
+    try {
+      const diff = Math.abs((p.getCurrentTime?.() ?? 0) - currentTime);
+      if (diff > 1.5) p.seekTo(currentTime, true);
+    } catch (_) {}
+  }, [currentTime, isSyncing]);
 
   return (
     <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
-      <iframe
-        ref={iframeRef}
-        src={embedSrc}
-        title="YouTube video player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-        allowFullScreen
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-      />
+      <div ref={wrapperRef} style={{ position: 'absolute', inset: 0 }} />
       {isSyncing && (
         <div style={{
           position: 'absolute', top: '12px', left: '12px', zIndex: 10,
@@ -68,6 +161,7 @@ function YouTubeEmbed({ ytId, isSyncing }) {
     </div>
   );
 }
+
 
 /**
  * Native HTML5 video player for remote server-hosted files.
@@ -242,9 +336,19 @@ export default function VideoPlayer({
     );
   }
 
-  // ── YouTube URL → use native iframe embed ───────────────────────────────────
+  // ── YouTube URL → YT IFrame Player API (full sync support) ─────────────────
   if (ytId) {
-    return <YouTubeEmbed ytId={ytId} isSyncing={isSyncing} />;
+    return (
+      <YouTubeEmbed
+        ytId={ytId}
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        isSyncing={isSyncing}
+        isHost={isHost}
+        onPlay={onPlay}
+        onPause={onPause}
+      />
+    );
   }
 
   // ── Blob URL (local file upload) → use native <video> element ──────────────
