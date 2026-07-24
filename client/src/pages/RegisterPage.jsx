@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import ParticleBackground from '../components/ParticleBackground';
+
+const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -45,8 +46,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      <ParticleBackground />
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      <Suspense fallback={null}>
+        <ParticleBackground />
+      </Suspense>
       {/* Background effects */}
       <div className="absolute inset-0 bg-surface-900">
         <div className="absolute top-1/3 -right-32 w-96 h-96 bg-accent-500/10 rounded-full blur-[120px]" />
@@ -65,7 +68,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Form Card */}
-        <div className="glass rounded-2xl p-8 animate-scale-in">
+        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-1.5">

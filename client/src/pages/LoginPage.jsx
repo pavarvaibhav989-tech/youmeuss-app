@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import ParticleBackground from '../components/ParticleBackground';
+
+const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -32,8 +33,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      <ParticleBackground />
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      <Suspense fallback={null}>
+        <ParticleBackground />
+      </Suspense>
       {/* Background effects */}
       <div className="absolute inset-0 bg-surface-900">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px]" />
@@ -52,7 +55,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form Card */}
-        <div className="glass rounded-2xl p-8 animate-scale-in">
+        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1.5">
