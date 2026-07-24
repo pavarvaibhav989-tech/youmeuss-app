@@ -14,6 +14,7 @@ import VideoUpload from '../components/VideoUpload';
 import InviteModal from '../components/InviteModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 export default function RoomPage() {
   const { roomId } = useParams();
@@ -180,18 +181,20 @@ export default function RoomPage() {
               </div>
             )}
 
-            {/* Video Player */}
+            {/* Video Player — isolated boundary so a player crash doesn't eject the user */}
             <div className="flex-shrink-0">
-              <VideoPlayer
-                videoUrl={videoUrl}
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                isSyncing={isSyncing}
-                isHost={isHost}
-                onPlay={play}
-                onPause={pause}
-                onSeek={seek}
-              />
+              <ErrorBoundary compact label="Video player error">
+                <VideoPlayer
+                  videoUrl={videoUrl}
+                  isPlaying={isPlaying}
+                  currentTime={currentTime}
+                  isSyncing={isSyncing}
+                  isHost={isHost}
+                  onPlay={play}
+                  onPause={pause}
+                  onSeek={seek}
+                />
+              </ErrorBoundary>
             </div>
 
           </div>
@@ -226,39 +229,45 @@ export default function RoomPage() {
             ))}
           </div>
 
-          {/* Sidebar Content */}
+          {/* Sidebar Content — each tab isolated so one crash doesn't break the others */}
           <div className="flex-1 min-h-0 overflow-hidden">
             {sidebarTab === 'chat' && (
-              <ChatPanel
-                messages={messages}
-                typingUsers={typingUsers}
-                onSendMessage={sendMessage}
-                onTyping={sendTyping}
-              />
+              <ErrorBoundary compact label="Chat error">
+                <ChatPanel
+                  messages={messages}
+                  typingUsers={typingUsers}
+                  onSendMessage={sendMessage}
+                  onTyping={sendTyping}
+                />
+              </ErrorBoundary>
             )}
 
             {sidebarTab === 'people' && (
               <div className="p-3 overflow-y-auto h-full">
-                <ParticipantList
-                  participants={participants}
-                  hostId={host?.id}
-                  currentUserId={user?.id}
-                />
+                <ErrorBoundary compact label="Participants error">
+                  <ParticipantList
+                    participants={participants}
+                    hostId={host?.id}
+                    currentUserId={user?.id}
+                  />
+                </ErrorBoundary>
               </div>
             )}
 
             {sidebarTab === 'call' && (
-              <VideoCall
-                localStream={localStream}
-                remoteStreams={remoteStreams}
-                isCallActive={isCallActive}
-                isMuted={isMuted}
-                isCameraOff={isCameraOff}
-                onStartCall={startCall}
-                onEndCall={endCall}
-                onToggleMute={toggleMute}
-                onToggleCamera={toggleCamera}
-              />
+              <ErrorBoundary compact label="Video call error">
+                <VideoCall
+                  localStream={localStream}
+                  remoteStreams={remoteStreams}
+                  isCallActive={isCallActive}
+                  isMuted={isMuted}
+                  isCameraOff={isCameraOff}
+                  onStartCall={startCall}
+                  onEndCall={endCall}
+                  onToggleMute={toggleMute}
+                  onToggleCamera={toggleCamera}
+                />
+              </ErrorBoundary>
             )}
           </div>
         </div>
