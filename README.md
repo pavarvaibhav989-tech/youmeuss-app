@@ -1,98 +1,139 @@
-# YouMeUss — Watch Together
+# 🎬 YouMeUss — Watch Together
 
-Watch videos in sync with your friends. Supports YouTube, direct video files, and live video calls.
+> Watch videos in perfect sync with friends, no matter the distance.
+> Synchronized playback · Live chat · Video calls · File uploads
 
-## 🚀 Quick Start (Local)
+**Live at → [youmeuss.vercel.app](https://youmeuss.vercel.app)**
 
-```bash
-# 1. Install server dependencies
-cd server && npm install
+---
 
-# 2. Install client dependencies
-cd ../client && npm install
+## ✨ Features
 
-# 3. Start the backend (in one terminal)
-cd server && npm run dev
+| Feature | Details |
+|---------|---------|
+| 🔐 **Auth** | Register, login, logout, password reset via email |
+| 🏠 **Rooms** | Create a room, share a 6-char code, anyone can join |
+| 🎬 **Video Sync** | YouTube links play/pause/seek in perfect sync for everyone |
+| 📁 **File Upload** | Host uploads local videos up to 3 GB |
+| 💬 **Live Chat** | Real-time messages with typing indicators + history on join |
+| 📹 **Video Calls** | WebRTC camera + mic calls inside the room |
+| 🕐 **Room History** | Homepage shows your recent rooms — rejoin with one click |
+| 🛡️ **Security** | Rate limiting, JWT auth, bcrypt passwords, token expiry |
+| 📱 **Mobile** | Responsive layout for phones and tablets |
+| ☁️ **Cloud** | Data persists forever — runs 24/7 with no laptop needed |
 
-# 4. Start the frontend (in another terminal)
-cd client && npm run dev
-
-# 5. Open http://localhost:5173
-```
-
-## 🌐 Deploy to Production
-
-### Backend → Railway
-
-1. Push your code to GitHub
-2. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-3. Select the **`server`** folder as the root directory
-4. Add these environment variables in Railway dashboard:
-
-```
-PORT=3001
-JWT_SECRET=<generate a long random string>
-JWT_REFRESH_SECRET=<generate another long random string>
-CLIENT_URL=https://your-app.vercel.app
-
-# Optional: Cloudinary for video uploads accessible to everyone
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
-
-5. Railway will give you a URL like `https://youmeuss-server.railway.app`
-
-### Frontend → Vercel
-
-1. Go to [vercel.com](https://vercel.com) → New Project → Import from GitHub
-2. Select the **`client`** folder as the root directory
-3. Add this environment variable:
-
-```
-VITE_API_URL=https://youmeuss-server.railway.app
-```
-
-4. Deploy — Vercel will give you a URL like `https://youmeuss.vercel.app`
-5. Go back to Railway and update `CLIENT_URL` to your Vercel URL
-
-### Optional: Cloudinary (for video uploads)
-
-Without Cloudinary, uploaded videos are stored on Railway's disk and only accessible while the server runs.
-
-With Cloudinary, uploaded videos get a permanent public URL accessible to everyone worldwide:
-
-1. Sign up free at [cloudinary.com](https://cloudinary.com)
-2. Go to Dashboard → copy Cloud Name, API Key, API Secret
-3. Add them as env vars in Railway (see above)
+---
 
 ## 🏗️ Tech Stack
 
-- **Frontend**: React + Vite + TailwindCSS
-- **Backend**: Node.js + Express + Socket.io
-- **Database**: SQLite (sql.js — persists to `youmeuss.db`)
-- **Video sync**: Socket.io events
-- **Video calls**: WebRTC
-- **File storage**: Local disk (dev) / Cloudinary (prod)
+### Frontend (Vercel)
+- **React 18** + **Vite** — fast dev and tiny production bundles
+- **Vanilla CSS** with custom design system (no Tailwind)
+- **Three.js** — animated particle background (lazy loaded)
+- **Socket.io-client** — real-time events
+- **WebRTC** — peer-to-peer video calls
+- **YouTube IFrame Player API** — synchronized YouTube playback
+
+### Backend (Railway)
+- **Node.js** + **Express** — REST API
+- **Socket.io** — real-time room events (chat, video sync, WebRTC signaling)
+- **PostgreSQL** (via `pg`) — persistent database
+- **bcryptjs** + **JWT** — authentication
+- **Multer** — file uploads up to 3 GB
+- **Resend** — transactional emails (password reset)
+- **express-rate-limit** — abuse prevention
+
+---
 
 ## 📁 Project Structure
 
 ```
 youmeuss/
-├── client/          # React frontend
+├── client/                  # React frontend (deployed to Vercel)
 │   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   └── lib/
-│   ├── .env         # VITE_API_URL=http://localhost:3001
-│   └── vercel.json
-└── server/          # Express backend
+│   │   ├── components/      # Reusable UI (ChatPanel, VideoPlayer, Navbar, ...)
+│   │   ├── pages/           # Route-level pages (LoginPage, RoomPage, ...)
+│   │   ├── hooks/           # Custom hooks (useChat, useVideoSync, useWebRTC, ...)
+│   │   ├── context/         # AuthContext
+│   │   └── lib/             # api.js, socket.js
+│   ├── public/              # Static assets (og-image.png, favicon.svg)
+│   ├── .env                 # VITE_API_URL=http://localhost:3001
+│   └── vite.config.js
+│
+└── server/                  # Express backend (deployed to Railway)
     ├── src/
-    │   ├── routes/
-    │   ├── sockets/
-    │   ├── db/
-    │   └── middleware/
-    ├── .env         # JWT secrets, Cloudinary keys
-    └── railway.json
+    │   ├── routes/          # auth.js, rooms.js, messages.js, videos.js
+    │   ├── sockets/         # chatHandler.js, videoHandler.js, roomHandler.js
+    │   ├── db/              # index.js (PostgreSQL pool + schema)
+    │   ├── middleware/      # auth.js (JWT verify)
+    │   └── jobs/            # cleanup.js (deletes rooms inactive > 7 days)
+    ├── .env                 # JWT secrets, DATABASE_URL, RESEND_API_KEY
+    └── package.json
 ```
+
+---
+
+## 🚀 Run Locally
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/your-username/youmeuss-app.git
+cd youmeuss-app
+
+# 2. Server setup
+cd server
+cp .env.example .env        # fill in JWT_SECRET, JWT_REFRESH_SECRET
+npm install
+npm run dev                 # runs on http://localhost:3001
+
+# 3. Client setup (new terminal)
+cd client
+cp .env.example .env        # VITE_API_URL=http://localhost:3001
+npm install
+npm run dev                 # runs on http://localhost:5173
+```
+
+> **Database:** Without `DATABASE_URL`, the server logs a warning and uses an in-memory fallback (data doesn't persist). For local Postgres, add `DATABASE_URL=postgresql://...` to `server/.env`.
+
+---
+
+## ☁️ Production Environment Variables
+
+### Server (Railway)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string (auto-set by Railway Postgres plugin) |
+| `JWT_SECRET` | ✅ | Long random string for access tokens |
+| `JWT_REFRESH_SECRET` | ✅ | Long random string for refresh tokens |
+| `CLIENT_URL` | ✅ | Your Vercel frontend URL (e.g. `https://youmeuss.vercel.app`) |
+| `RESEND_API_KEY` | ✅ | From [resend.com](https://resend.com) — for password reset emails |
+| `PORT` | ✅ | `3001` |
+| `NODE_ENV` | ✅ | `production` |
+| `CLOUDINARY_CLOUD_NAME` | Optional | For persistent cloud video storage |
+| `CLOUDINARY_API_KEY` | Optional | Cloudinary credentials |
+| `CLOUDINARY_API_SECRET` | Optional | Cloudinary credentials |
+
+### Client (Vercel)
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | Your Railway server URL |
+
+---
+
+## 🔑 Key Design Decisions
+
+- **PostgreSQL over SQLite** — data survives Railway restarts and scales horizontally
+- **Lazy loading** — Three.js, login page, room page all load on demand (5 KB initial bundle)
+- **Rate limiting skipped in dev** — so local testing isn't blocked by limits
+- **No user enumeration** — `/forgot-password` always returns 200, even for unknown emails
+- **YouTube IFrame Player API** — proper sync (not just iframe embed); host play/pause is detected and broadcast to all participants
+- **Error boundaries at 2 levels** — app-level (full page fallback) + widget-level (inline fallback per component)
+- **Room cleanup job** — rooms inactive for 7+ days are deleted automatically via `setInterval`
+
+---
+
+## 📝 License
+
+MIT — do whatever you want with it.
