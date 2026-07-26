@@ -66,7 +66,7 @@ const diskStorage = multer.diskStorage({
   },
 });
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB
+const MAX_FILE_SIZE = 3 * 1024 * 1024 * 1024; // 3 GB
 const ALLOWED_EXTENSIONS = ['.mp4', '.webm', '.mkv', '.mov', '.avi', '.m4v', '.wmv'];
 
 const upload = multer({

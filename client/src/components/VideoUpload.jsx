@@ -29,8 +29,8 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024 * 1024) {
-      addToast('File too large. Maximum size is 2GB.', 'error');
+    if (file.size > 3 * 1024 * 1024 * 1024) {
+      addToast('File too large. Maximum size is 3GB.', 'error');
       return;
     }
 
@@ -200,7 +200,7 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
         <p className="text-sm text-text-secondary">
           <span className="text-brand-400 font-medium">Click to upload</span> or drag & drop
         </p>
-        <p className="text-xs text-text-muted mt-1">MP4, WebM, MKV, MOV — Max 2GB</p>
+        <p className="text-xs text-text-muted mt-1">MP4, WebM, MKV, MOV — Max 3GB</p>
       </div>
     </div>
   );
