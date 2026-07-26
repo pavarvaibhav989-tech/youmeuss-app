@@ -17,6 +17,8 @@ const LoginPage      = lazy(() => import('./pages/LoginPage'));
 const RegisterPage   = lazy(() => import('./pages/RegisterPage'));
 const RoomPage       = lazy(() => import('./pages/RoomPage'));
 const ParticleLabPage = lazy(() => import('./pages/particle-lab/ParticleLabPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage  = lazy(() => import('./pages/ResetPasswordPage'));
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -29,6 +31,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/" element={<App />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
                 <Route
                   path="/room/:roomId"
                   element={

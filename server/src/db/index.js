@@ -119,14 +119,24 @@ async function initializeSchema() {
       )
     `);
 
+    // Password reset columns — added safely to existing tables
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT
+    `);
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP
+    `);
+
     // Indexes
     await client.query('CREATE INDEX IF NOT EXISTS idx_rooms_code ON rooms(room_code)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_participants_room ON participants(room_id)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id)');
     await client.query('CREATE INDEX IF NOT EXISTS idx_videos_room ON videos(room_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)');
 
     await client.query('COMMIT');
     console.log('✅ Database schema initialized');
+
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
