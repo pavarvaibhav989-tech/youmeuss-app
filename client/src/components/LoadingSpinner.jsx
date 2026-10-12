@@ -1,15 +1,60 @@
-export default function LoadingSpinner({ text = 'Loading...' }) {
+export default function LoadingSpinner({ text = 'Loading…' }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-surface-900">
-      <div className="relative">
-        {/* Outer ring */}
-        <div className="w-16 h-16 rounded-full border-2 border-surface-600 border-t-brand-500 animate-spin" />
-        {/* Inner glow */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 rounded-full gradient-brand animate-pulse-soft opacity-60" />
-        </div>
+    <div
+      style={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--color-surface-950)',
+        gap: '1.5rem',
+      }}
+    >
+      {/* Ring spinner — CSS only, transform-only animation */}
+      <div style={{ position: 'relative', width: '40px', height: '40px' }}>
+        <svg
+          viewBox="0 0 40 40"
+          width="40"
+          height="40"
+          style={{ animation: 'spin 0.9s linear infinite' }}
+        >
+          <circle
+            cx="20" cy="20" r="16"
+            fill="none"
+            stroke="color-mix(in srgb, var(--color-surface-600) 60%, transparent)"
+            strokeWidth="2.5"
+          />
+          <circle
+            cx="20" cy="20" r="16"
+            fill="none"
+            stroke="var(--color-rose-500)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray="28 72"
+            strokeDashoffset="0"
+          />
+        </svg>
       </div>
-      <p className="mt-6 text-text-secondary text-sm animate-pulse-soft">{text}</p>
+
+      <p
+        style={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: '0.8125rem',
+          color: 'var(--color-text-muted)',
+          fontWeight: 500,
+          letterSpacing: '0.01em',
+        }}
+      >
+        {text}
+      </p>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

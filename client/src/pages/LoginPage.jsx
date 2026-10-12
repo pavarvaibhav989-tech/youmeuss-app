@@ -2,16 +2,18 @@ import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
+import { FilmSlate, Eye, EyeSlash } from '@phosphor-icons/react';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const { addToast } = useToast();
-  const navigate = useNavigate();
+  const [showPw,   setShowPw]   = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const { login }     = useAuth();
+  const { addToast }  = useToast();
+  const navigate      = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,11 +21,10 @@ export default function LoginPage() {
       addToast('Please fill in all fields', 'warning');
       return;
     }
-
     setLoading(true);
     try {
       await login(email, password);
-      addToast('Welcome back! 🎬', 'success');
+      addToast('Welcome back', 'success');
       navigate('/');
     } catch (err) {
       addToast(err.response?.data?.error || 'Login failed', 'error');
@@ -33,88 +34,223 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--color-surface-950)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Suspense fallback={null}>
         <ParticleBackground />
       </Suspense>
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-surface-900">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent-500/10 rounded-full blur-[120px]" />
-      </div>
 
-      <div className="relative w-full max-w-md">
+      {/* Ambient rose glow — one, positioned, not centered blob */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: '-10%',
+          left: '-8%',
+          width: '480px',
+          height: '480px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-rose-500) 7%, transparent) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '400px',
+          zIndex: 1,
+        }}
+      >
+        {/* Logo */}
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            textDecoration: 'none',
+            marginBottom: '2rem',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FilmSlate size={16} color="white" weight="fill" />
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.125rem',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            YouMe<span style={{ color: 'var(--color-rose-500)' }}>Uss</span>
+          </span>
+        </Link>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 no-underline mb-4">
-            <span className="text-3xl">🎬</span>
-            <span className="text-2xl font-bold gradient-brand-text">YouMeUss</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-text-primary mt-4">Welcome back</h1>
-          <p className="text-text-secondary text-sm mt-1">Sign in to continue watching together</p>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              letterSpacing: '-0.035em',
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.375rem',
+              lineHeight: 1.15,
+            }}
+          >
+            Welcome back
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+            Sign in to continue watching together
+          </p>
         </div>
 
-        {/* Form Card */}
-        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Form card */}
+        <div
+          className="glass-elevated animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+        >
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1.5">
+              <label
+                htmlFor="login-email"
+                style={{
+                  display: 'block',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-text-muted)',
+                  marginBottom: '0.5rem',
+                }}
+              >
                 Email
               </label>
               <input
-                id="email"
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
+                className="input-base"
                 autoComplete="email"
               />
             </div>
 
+            {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="password" className="block text-sm font-medium text-text-secondary">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <label
+                  htmlFor="login-password"
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-brand-400 hover:text-brand-300 transition-colors no-underline"
+                  style={{ fontSize: '0.75rem', color: 'var(--color-rose-400)', textDecoration: 'none', transition: 'color 150ms' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-rose-300)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-rose-400)'}
                 >
-                  Forgot password?
+                  Forgot?
                 </Link>
               </div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
-                autoComplete="current-password"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="input-base"
+                  autoComplete="current-password"
+                  style={{ paddingRight: '2.75rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: 'absolute',
+                    right: '0.875rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                    transition: 'color 150ms',
+                  }}
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-text-secondary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+                >
+                  {showPw ? <EyeSlash size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <button
+              id="login-submit"
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-white gradient-brand
-                         hover:opacity-90 transition-all duration-200 cursor-pointer border-none
-                         disabled:opacity-50 disabled:cursor-not-allowed glow-brand"
+              className="btn-primary"
+              style={{ justifyContent: 'center', marginTop: '0.25rem' }}
             >
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-text-muted mt-6">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-brand-400 hover:text-brand-300 transition-colors no-underline font-medium">
+          <p
+            style={{
+              textAlign: 'center',
+              fontSize: '0.8125rem',
+              color: 'var(--color-text-muted)',
+              marginTop: '1.5rem',
+            }}
+          >
+            No account?{' '}
+            <Link
+              to="/register"
+              style={{ color: 'var(--color-rose-400)', textDecoration: 'none', fontWeight: 500, transition: 'color 150ms' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-rose-300)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-rose-400)'}
+            >
               Sign up
             </Link>
           </p>

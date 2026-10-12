@@ -2,18 +2,20 @@ import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
+import { FilmSlate, Eye, EyeSlash } from '@phosphor-icons/react';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username,        setUsername]        = useState('');
+  const [email,           setEmail]           = useState('');
+  const [password,        setPassword]        = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
-  const { addToast } = useToast();
-  const navigate = useNavigate();
+  const [showPw,          setShowPw]          = useState(false);
+  const [loading,         setLoading]         = useState(false);
+  const { register }   = useAuth();
+  const { addToast }   = useToast();
+  const navigate       = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,12 +24,10 @@ export default function RegisterPage() {
       addToast('Please fill in all fields', 'warning');
       return;
     }
-
     if (password.length < 6) {
       addToast('Password must be at least 6 characters', 'warning');
       return;
     }
-
     if (password !== confirmPassword) {
       addToast('Passwords do not match', 'error');
       return;
@@ -36,7 +36,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(username, email, password);
-      addToast('Welcome to YouMeUss! 🎬🍿', 'success');
+      addToast('Account created. Welcome!', 'success');
       navigate('/');
     } catch (err) {
       addToast(err.response?.data?.error || 'Registration failed', 'error');
@@ -45,117 +45,229 @@ export default function RegisterPage() {
     }
   };
 
+  const inputLabelStyle = {
+    display: 'block',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: 'var(--color-text-muted)',
+    marginBottom: '0.5rem',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--color-surface-950)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Suspense fallback={null}>
         <ParticleBackground />
       </Suspense>
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-surface-900">
-        <div className="absolute top-1/3 -right-32 w-96 h-96 bg-accent-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/3 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px]" />
-      </div>
 
-      <div className="relative w-full max-w-md">
+      {/* Single ambient glow — top right, not centered */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '-10%',
+          right: '-8%',
+          width: '480px',
+          height: '480px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-rose-500) 7%, transparent) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '420px',
+          zIndex: 1,
+        }}
+      >
+        {/* Logo */}
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            textDecoration: 'none',
+            marginBottom: '2rem',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FilmSlate size={16} color="white" weight="fill" />
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.125rem',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            YouMe<span style={{ color: 'var(--color-rose-500)' }}>Uss</span>
+          </span>
+        </Link>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 no-underline mb-4">
-            <span className="text-3xl">🎬</span>
-            <span className="text-2xl font-bold gradient-brand-text">YouMeUss</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-text-primary mt-4">Create your account</h1>
-          <p className="text-text-secondary text-sm mt-1">Start watching together in seconds</p>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              letterSpacing: '-0.035em',
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.375rem',
+              lineHeight: 1.15,
+            }}
+          >
+            Create your account
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+            Start watching together in under a minute
+          </p>
         </div>
 
-        {/* Form Card */}
-        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Form card */}
+        <div
+          className="glass-elevated animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+        >
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+          >
+            {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-text-secondary mb-1.5">
-                Username
-              </label>
+              <label htmlFor="reg-username" style={inputLabelStyle}>Username</label>
               <input
-                id="username"
+                id="reg-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="coolwatcher42"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
+                placeholder="your_username"
+                className="input-base"
                 autoComplete="username"
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label htmlFor="reg-email" className="block text-sm font-medium text-text-secondary mb-1.5">
-                Email
-              </label>
+              <label htmlFor="reg-email" style={inputLabelStyle}>Email</label>
               <input
                 id="reg-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
+                className="input-base"
                 autoComplete="email"
               />
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="reg-password" className="block text-sm font-medium text-text-secondary mb-1.5">
-                Password
-              </label>
-              <input
-                id="reg-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 6 characters"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
-                autoComplete="new-password"
-              />
+              <label htmlFor="reg-password" style={inputLabelStyle}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="reg-password"
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  className="input-base"
+                  autoComplete="new-password"
+                  style={{ paddingRight: '2.75rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  style={{
+                    position: 'absolute',
+                    right: '0.875rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0,
+                    transition: 'color 150ms',
+                  }}
+                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                >
+                  {showPw ? <EyeSlash size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-text-secondary mb-1.5">
-                Confirm Password
-              </label>
+              <label htmlFor="reg-confirm-password" style={inputLabelStyle}>Confirm password</label>
               <input
-                id="confirm-password"
+                id="reg-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                           text-sm text-text-primary placeholder:text-text-muted
-                           focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                           transition-all duration-200"
+                className="input-base"
                 autoComplete="new-password"
               />
             </div>
 
             <button
+              id="register-submit"
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl text-sm font-semibold text-white gradient-brand
-                         hover:opacity-90 transition-all duration-200 cursor-pointer border-none
-                         disabled:opacity-50 disabled:cursor-not-allowed glow-brand mt-2"
+              className="btn-primary"
+              style={{ justifyContent: 'center', marginTop: '0.375rem' }}
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-text-muted mt-6">
+          <p
+            style={{
+              textAlign: 'center',
+              fontSize: '0.8125rem',
+              color: 'var(--color-text-muted)',
+              marginTop: '1.5rem',
+            }}
+          >
             Already have an account?{' '}
-            <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors no-underline font-medium">
+            <Link
+              to="/login"
+              style={{ color: 'var(--color-rose-400)', textDecoration: 'none', fontWeight: 500, transition: 'color 150ms' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-rose-300)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-rose-400)'}
+            >
               Sign in
             </Link>
           </p>

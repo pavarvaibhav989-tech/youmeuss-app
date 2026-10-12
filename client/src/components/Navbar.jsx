@@ -1,5 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { House, SignOut, ArrowLeft, UserCircle, FilmSlate } from '@phosphor-icons/react';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -13,73 +14,133 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2 no-underline">
-              <span className="text-2xl">🎬</span>
-              <span className="text-xl font-bold gradient-brand-text">YouMeUss</span>
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 glass"
+      style={{
+        borderBottom: '1px solid color-mix(in srgb, white 5%, transparent)',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: '64px',
+        }}
+      >
+        {/* Left — Logo + optional back */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <Link
+            to="/"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              textDecoration: 'none',
+            }}
+          >
+            <div
+              style={{
+                width: '30px',
+                height: '30px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--color-rose-600) 30%, transparent)',
+              }}
+            >
+              <FilmSlate size={15} color="white" weight="fill" />
+            </div>
+            <span
+              style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: '1.0625rem',
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              YouMe<span style={{ color: 'var(--color-rose-500)' }}>Uss</span>
+            </span>
+          </Link>
+
+          {/* In-room back button */}
+          {isInRoom && (
+            <Link
+              to="/"
+              className="btn-ghost"
+              style={{
+                fontSize: '0.75rem',
+                padding: '0.35rem 0.75rem',
+                gap: '0.35rem',
+                textDecoration: 'none',
+              }}
+            >
+              <ArrowLeft size={12} weight="bold" />
+              Home
             </Link>
-            {/* Home button — only shown inside a room */}
-            {isInRoom && (
-              <Link
-                to="/"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                           text-text-muted hover:text-text-primary bg-surface-600 hover:bg-surface-500
-                           border border-surface-400/20 transition-all duration-200 no-underline"
+          )}
+        </div>
+
+        {/* Right — auth controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {isAuthenticated ? (
+            <>
+              {/* User pill */}
+              <div
+                className="hidden sm:flex"
+                style={{ alignItems: 'center', gap: '0.5rem' }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                Home
-              </Link>
-            )}
-          </div>
-
-
-          {/* Right side */}
-          <div className="flex items-center gap-4">
-            {isAuthenticated ? (
-              <>
-                {/* User info */}
-                <div className="hidden sm:flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-sm font-semibold text-white">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="text-sm text-text-secondary">{user?.username}</span>
+                <div
+                  className="avatar"
+                  style={{ width: '28px', height: '28px', fontSize: '0.7rem' }}
+                >
+                  {user?.username?.charAt(0).toUpperCase()}
                 </div>
+                <span
+                  style={{
+                    fontSize: '0.8125rem',
+                    fontWeight: 500,
+                    color: 'var(--color-text-secondary)',
+                  }}
+                >
+                  {user?.username}
+                </span>
+              </div>
 
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary
-                             bg-surface-600 hover:bg-surface-500 transition-all duration-200
-                             border border-surface-400/30 cursor-pointer"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary
-                             hover:text-text-primary transition-colors duration-200 no-underline"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white
-                             gradient-brand hover:opacity-90 transition-opacity duration-200
-                             no-underline glow-brand"
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
+              <button
+                onClick={handleLogout}
+                className="btn-icon"
+                title="Log out"
+                style={{ borderRadius: '8px' }}
+              >
+                <SignOut size={15} weight="bold" />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="nav-link"
+                style={{ textDecoration: 'none' }}
+              >
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="btn-primary"
+                style={{ textDecoration: 'none', padding: '0.5rem 1.125rem' }}
+              >
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </nav>

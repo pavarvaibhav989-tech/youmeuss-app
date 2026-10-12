@@ -15,6 +15,7 @@ import InviteModal from '../components/InviteModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Navbar from '../components/Navbar';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { Chat, Users, VideoCamera, UserPlus, HourglassMedium, House } from '@phosphor-icons/react';
 
 export default function RoomPage() {
   const { roomId } = useParams();
@@ -80,18 +81,47 @@ export default function RoomPage() {
   }, [loadVideo]);
 
   if (loading) {
-    return <LoadingSpinner text="Joining room..." />;
+    return <LoadingSpinner text="Joining room…" />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-surface-900">
-        <div className="text-5xl mb-4">😕</div>
-        <h2 className="text-xl font-bold text-text-primary mb-2">Room not found</h2>
-        <p className="text-text-secondary text-sm">{error}</p>
-        <a href="/" className="mt-6 px-6 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold
-                               no-underline hover:opacity-90 transition-opacity">
-          Go Home
+      <div
+        style={{
+          minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--color-surface-950)',
+          gap: '0.75rem',
+        }}
+      >
+        <div
+          style={{
+            width: '56px', height: '56px', borderRadius: '16px',
+            background: 'var(--color-surface-800)',
+            border: '1px solid color-mix(in srgb, white 6%, transparent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <House size={24} color="var(--color-text-muted)" />
+        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--font-sans)', fontSize: '1.125rem', fontWeight: 700,
+            letterSpacing: '-0.025em', color: 'var(--color-text-primary)',
+          }}
+        >
+          Room not found
+        </h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>{error}</p>
+        <a
+          href="/"
+          className="btn-primary"
+          style={{ textDecoration: 'none', marginTop: '0.5rem' }}
+        >
+          Go home
         </a>
       </div>
     );
@@ -102,35 +132,37 @@ export default function RoomPage() {
       <Navbar />
 
       {/* Room Header */}
-      <div className="pt-16 flex-shrink-0">
-        <div className="px-4 py-3 border-b border-surface-400/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-text-primary">
-                Room:
-              </span>
-              <span className="text-sm font-mono tracking-wider text-brand-400 bg-surface-700 px-2.5 py-1 rounded-lg">
-                {room?.room_code}
-              </span>
-            </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-text-muted">
-              <div className="w-2 h-2 rounded-full bg-success" />
+      <div style={{ paddingTop: '64px', flexShrink: 0 }}>
+        <div
+          style={{
+            padding: '0.625rem 1rem',
+            borderBottom: '1px solid color-mix(in srgb, white 5%, transparent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'color-mix(in srgb, var(--color-surface-900) 80%, transparent)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span className="room-code">{room?.room_code}</span>
+            <div
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                fontSize: '0.75rem', color: 'var(--color-text-muted)',
+              }}
+            >
+              <div className="status-dot" style={{ width: '6px', height: '6px' }} />
               {participants.filter(p => p.isOnline !== false).length} online
             </div>
           </div>
 
           <button
             onClick={() => setShowInvite(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                       bg-surface-600 hover:bg-surface-500 text-text-primary
-                       transition-all duration-200 cursor-pointer border border-surface-400/20"
+            className="btn-ghost"
+            style={{ padding: '0.4rem 0.875rem', fontSize: '0.8rem', gap: '0.375rem' }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <line x1="20" y1="8" x2="20" y2="14"></line>
-              <line x1="23" y1="11" x2="17" y2="11"></line>
-            </svg>
+            <UserPlus size={13} weight="bold" />
             Invite
           </button>
         </div>
@@ -143,40 +175,52 @@ export default function RoomPage() {
                         h-auto lg:flex-1 lg:min-h-0">
           <div className="p-3 sm:p-4 space-y-3">
 
-            {/* Video Controls - host only, above player */}
+            {/* Video Controls — host only, above player */}
             {isHost && (
-              <div className="space-y-2 flex-shrink-0">
-                {/* URL Input — shorter placeholder on mobile */}
-                <form onSubmit={handleLoadUrl} className="flex gap-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
+                <form onSubmit={handleLoadUrl} style={{ display: 'flex', gap: '0.5rem' }}>
                   <input
                     ref={urlInputRef}
                     type="text"
                     defaultValue=""
-                    placeholder="Paste YouTube or video URL..."
-                    className="flex-1 min-w-0 bg-surface-700 border border-surface-400/20 rounded-xl px-3 py-2.5
-                               text-sm text-text-primary placeholder:text-text-muted
-                               focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                               transition-all duration-200"
+                    placeholder="Paste YouTube or video URL…"
+                    className="input-base"
+                    style={{ flex: 1, minWidth: 0, padding: '0.625rem 0.875rem', fontSize: '0.8125rem' }}
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold
-                               hover:opacity-90 transition-opacity cursor-pointer border-none whitespace-nowrap flex-shrink-0"
+                    className="btn-primary"
+                    style={{ flexShrink: 0, padding: '0.625rem 1.125rem', fontSize: '0.8125rem' }}
                   >
                     Load
                   </button>
                 </form>
-
-                {/* Upload */}
                 <VideoUpload roomId={room?.id} onVideoLoaded={handleVideoUploaded} />
               </div>
             )}
 
             {/* Non-host waiting state */}
             {!isHost && !videoUrl && (
-              <div className="glass rounded-xl p-3 text-center flex-shrink-0">
-                <p className="text-sm text-text-secondary">
-                  ⏳ Waiting for <span className="text-brand-400 font-medium">{host?.username}</span> to load a video...
+              <div
+                className="glass"
+                style={{
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '0.875rem 1rem',
+                  textAlign: 'center',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <HourglassMedium size={14} color="var(--color-text-muted)" />
+                <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+                  Waiting for{' '}
+                  <span style={{ color: 'var(--color-rose-400)', fontWeight: 600 }}>
+                    {host?.username}
+                  </span>{' '}
+                  to load a video
                 </p>
               </div>
             )}
@@ -200,30 +244,84 @@ export default function RoomPage() {
           </div>
         </div>
 
-        {/* Right/Bottom: Sidebar — fixed height on mobile, auto on desktop */}
-        <div className="h-[45vh] lg:h-auto w-full lg:w-[380px] flex flex-col
-                        border-t lg:border-t-0 lg:border-l border-surface-400/10
-                        bg-surface-800/50 flex-shrink-0 overflow-hidden">
-          {/* Sidebar Tabs — taller on mobile for easier touch */}
-          <div className="flex border-b border-surface-400/10 px-2 flex-shrink-0">
+        {/* Right/Bottom: Sidebar */}
+        <div
+          style={{
+            height: 'clamp(45vh, 45vh, 45vh)',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            borderTop: '1px solid color-mix(in srgb, white 5%, transparent)',
+            background: 'color-mix(in srgb, var(--color-surface-900) 60%, transparent)',
+            flexShrink: 0,
+            overflow: 'hidden',
+          }}
+          className="lg-sidebar"
+        >
+          {/* Sidebar Tabs */}
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: '1px solid color-mix(in srgb, white 5%, transparent)',
+              padding: '0 0.5rem',
+              flexShrink: 0,
+            }}
+          >
             {[
-              { id: 'chat', label: '💬 Chat', count: messages.length },
-              { id: 'people', label: '👥 People', count: participants.length },
-              { id: 'call', label: '📹 Call', active: isCallActive },
+              { id: 'chat',   Icon: Chat,        label: 'Chat',   extra: messages.length > 0 ? messages.length : null },
+              { id: 'people', Icon: Users,       label: 'People', extra: participants.length },
+              { id: 'call',   Icon: VideoCamera, label: 'Call',   dot: isCallActive },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 px-2 py-3.5 lg:py-3 text-xs font-medium transition-all duration-200
-                           border-b-2 cursor-pointer bg-transparent
-                           ${sidebarTab === tab.id
-                             ? 'border-brand-500 text-brand-400'
-                             : 'border-transparent text-text-muted hover:text-text-secondary'
-                           }`}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.375rem',
+                  padding: '0.75rem 0.5rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-sans)',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: '2px solid',
+                  borderColor: sidebarTab === tab.id
+                    ? 'var(--color-rose-500)'
+                    : 'transparent',
+                  color: sidebarTab === tab.id
+                    ? 'var(--color-rose-400)'
+                    : 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  transition: 'color 150ms, border-color 150ms',
+                  whiteSpace: 'nowrap',
+                }}
               >
+                <tab.Icon size={13} weight={sidebarTab === tab.id ? 'fill' : 'regular'} />
                 {tab.label}
-                {tab.active && (
-                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-success inline-block" />
+                {tab.extra !== null && tab.extra !== undefined && (
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.625rem',
+                      color: 'var(--color-text-muted)',
+                    }}
+                  >
+                    {tab.extra}
+                  </span>
+                )}
+                {tab.dot && (
+                  <span
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: 'var(--color-green-500)',
+                      display: 'inline-block',
+                    }}
+                  />
                 )}
               </button>
             ))}
@@ -280,6 +378,18 @@ export default function RoomPage() {
           onClose={() => setShowInvite(false)}
         />
       )}
+
+      {/* Responsive: sidebar goes full-width on desktop */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .lg-sidebar {
+            height: auto !important;
+            width: 360px !important;
+            border-top: none !important;
+            border-left: 1px solid color-mix(in srgb, white 5%, transparent) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
