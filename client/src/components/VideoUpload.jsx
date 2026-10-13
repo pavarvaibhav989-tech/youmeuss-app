@@ -1,4 +1,5 @@
 import { useRef, useCallback, useState } from 'react';
+import { CloudArrowUp, FilmStrip, X } from '@phosphor-icons/react';
 import { useToast } from './Toast';
 
 const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -95,14 +96,13 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
       });
 
       // Success — build the full URL
-      // Cloudinary returns a full https:// URL; disk storage returns a relative path
       const storageUrl = result.video.storage_url;
       const videoUrl = storageUrl.startsWith('http')
         ? storageUrl
         : `${SERVER_URL}${storageUrl}`;
       console.log('[VideoUpload] Upload success, video URL:', videoUrl);
       onVideoLoaded(videoUrl);
-      addToast(`✅ Uploaded: ${file.name}`, 'success');
+      addToast(`Uploaded: ${file.name}`, 'success');
     } catch (err) {
       console.error('[VideoUpload] Upload error:', err);
       if (err.message !== 'Upload cancelled') {
@@ -113,14 +113,12 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
       setProgress(0);
       setFileName('');
       abortRef.current = null;
-      // Reset file input so the same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [roomId, onVideoLoaded, addToast]);
 
   const handleFileSelect = useCallback((e) => {
     const file = e.target.files?.[0];
-    console.log('[VideoUpload] handleFileSelect triggered, file:', file?.name);
     if (!file) return;
     uploadFile(file);
   }, [uploadFile]);
@@ -147,29 +145,68 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
   // ── Uploading state ──────────────────────────────────────
   if (uploading) {
     return (
-      <div className="flex flex-col gap-3 w-full">
-        <div className="border-2 border-dashed border-brand-500/40 rounded-xl p-5 text-center bg-surface-700/20">
-          <div className="text-sm text-text-primary font-medium mb-1 truncate max-w-full">
-            📤 Uploading: {fileName}
+      <div style={{
+        borderRadius: 'var(--radius-lg)',
+        padding: '0.875rem 1rem',
+        background: 'var(--color-surface-800)',
+        border: '1px solid color-mix(in srgb, var(--color-rose-500) 30%, transparent)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.625rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+            <FilmStrip size={15} color="var(--color-rose-400)" />
+            <span style={{
+              fontSize: '0.78rem',
+              color: 'var(--color-text-primary)',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {fileName}
+            </span>
           </div>
+          <button
+            onClick={handleCancel}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--color-text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '2px',
+            }}
+            title="Cancel upload"
+          >
+            <X size={14} />
+          </button>
+        </div>
 
-          {/* Progress bar */}
-          <div className="w-full h-2 bg-surface-600 rounded-full overflow-hidden mt-3 mb-2">
-            <div
-              className="h-full gradient-brand rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+        {/* Progress bar */}
+        <div style={{
+          height: '4px',
+          width: '100%',
+          background: 'var(--color-surface-700)',
+          borderRadius: '9999px',
+          overflow: 'hidden',
+        }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, var(--color-rose-500), var(--color-rose-400))',
+              borderRadius: '9999px',
+              transition: 'width 200ms ease-out',
+            }}
+          />
+        </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-brand-400 font-mono">{progress}%</span>
-            <button
-              onClick={handleCancel}
-              className="text-red-400 hover:text-red-300 cursor-pointer bg-transparent border-none text-xs underline"
-            >
-              Cancel
-            </button>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6875rem' }}>
+          <span style={{ color: 'var(--color-text-muted)' }}>Uploading…</span>
+          <span style={{ color: 'var(--color-rose-400)', fontFamily: 'var(--font-mono)' }}>{progress}%</span>
         </div>
       </div>
     );
@@ -177,30 +214,61 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
 
   // ── Default state ────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-3 w-full">
-      {/* Hidden file input */}
+    <div>
       <input
         ref={fileInputRef}
         type="file"
         accept="video/*,.mp4,.webm,.mkv,.mov,.avi,.m4v"
         onChange={handleFileSelect}
-        className="hidden"
+        style={{ display: 'none' }}
       />
 
-      {/* Drag & Drop Zone */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        className="group border-2 border-dashed border-surface-400/30 hover:border-brand-500/50
-                   rounded-xl p-6 text-center cursor-pointer transition-all duration-300
-                   hover:bg-surface-700/30"
+        style={{
+          border: '1px dashed color-mix(in srgb, white 12%, transparent)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '0.75rem 1rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.75rem',
+          cursor: 'pointer',
+          background: 'color-mix(in srgb, var(--color-surface-800) 50%, transparent)',
+          transition: 'border-color 150ms, background 150ms',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-rose-500) 40%, transparent)';
+          e.currentTarget.style.background = 'color-mix(in srgb, var(--color-surface-800) 80%, transparent)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'color-mix(in srgb, white 12%, transparent)';
+          e.currentTarget.style.background = 'color-mix(in srgb, var(--color-surface-800) 50%, transparent)';
+        }}
       >
-        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">🎬</div>
-        <p className="text-sm text-text-secondary">
-          <span className="text-brand-400 font-medium">Click to upload</span> or drag & drop
-        </p>
-        <p className="text-xs text-text-muted mt-1">MP4, WebM, MKV, MOV — Max 3GB</p>
+        <div style={{
+          width: '30px',
+          height: '30px',
+          borderRadius: '8px',
+          background: 'color-mix(in srgb, var(--color-rose-500) 10%, transparent)',
+          border: '1px solid color-mix(in srgb, var(--color-rose-500) 20%, transparent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <CloudArrowUp size={16} color="var(--color-rose-400)" weight="duotone" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-primary)', margin: 0 }}>
+            <span style={{ color: 'var(--color-rose-400)', fontWeight: 600 }}>Click to upload</span> or drag & drop video
+          </p>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
+            MP4, WebM, MKV, MOV — Max 3GB
+          </span>
+        </div>
       </div>
     </div>
   );

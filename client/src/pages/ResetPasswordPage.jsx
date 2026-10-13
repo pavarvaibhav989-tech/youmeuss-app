@@ -1,33 +1,78 @@
 import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { FilmSlate, Key, CheckCircle, WarningCircle, Eye, EyeSlash } from '@phosphor-icons/react';
 import api from '../lib/api';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const { addToast } = useToast();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const [confirm, setConfirm]   = useState('');
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [done, setDone]         = useState(false);
+  const { addToast }            = useToast();
+  const navigate                = useNavigate();
+  const [searchParams]          = useSearchParams();
+  const token                   = searchParams.get('token');
 
   // No token in URL → show error immediately
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-surface-900">
-        <div className="glass rounded-2xl p-8 text-center max-w-sm">
-          <div className="text-5xl mb-4">🔗</div>
-          <h2 className="text-lg font-semibold text-text-primary mb-2">Invalid reset link</h2>
-          <p className="text-sm text-text-secondary mb-6">
-            This link is missing a reset token. Please request a new password reset.
+      <div
+        style={{
+          minHeight: '100dvh',
+          background: 'var(--color-surface-950)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem 1.5rem',
+        }}
+      >
+        <div
+          className="glass-elevated"
+          style={{
+            borderRadius: 'var(--radius-xl)',
+            padding: '2.5rem 2rem',
+            textAlign: 'center',
+            maxWidth: '380px',
+            width: '100%',
+          }}
+        >
+          <div
+            style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              background: 'color-mix(in srgb, var(--color-red-500) 12%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--color-red-500) 25%, transparent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem',
+            }}
+          >
+            <WarningCircle size={26} color="var(--color-red-500)" weight="fill" />
+          </div>
+          <h2
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Invalid reset link
+          </h2>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', lineHeight: 1.55, marginBottom: '1.5rem' }}>
+            This link is missing a valid reset token. Please request a new password reset link.
           </p>
           <Link
             to="/forgot-password"
-            className="inline-block px-6 py-2.5 rounded-xl gradient-brand text-white text-sm font-semibold no-underline hover:opacity-90 transition-opacity"
+            className="btn-primary"
+            style={{ textDecoration: 'none', width: '100%', justifyContent: 'center' }}
           >
             Request new link
           </Link>
@@ -57,120 +102,210 @@ export default function ResetPasswordPage() {
       setDone(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      addToast(err.response?.data?.error || 'Reset failed — the link may have expired', 'error');
+      addToast(err.response?.data?.error || 'Reset failed — link may have expired', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  const labelStyle = {
+    display: 'block',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: 'var(--color-text-muted)',
+    marginBottom: '0.5rem',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--color-surface-950)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Suspense fallback={null}>
         <ParticleBackground />
       </Suspense>
-      {/* Background blobs */}
-      <div className="absolute inset-0 bg-surface-900">
-        <div className="absolute top-1/4 -right-32 w-96 h-96 bg-accent-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px]" />
-      </div>
 
-      <div className="relative w-full max-w-md">
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '-10%',
+          right: '-8%',
+          width: '480px',
+          height: '480px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-rose-500) 7%, transparent) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '400px',
+          zIndex: 1,
+        }}
+      >
+        {/* Logo */}
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            textDecoration: 'none',
+            marginBottom: '2rem',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FilmSlate size={16} color="white" weight="fill" />
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.125rem',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            YouMe<span style={{ color: 'var(--color-rose-500)' }}>Uss</span>
+          </span>
+        </Link>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 no-underline mb-4">
-            <span className="text-3xl">🎬</span>
-            <span className="text-2xl font-bold gradient-brand-text">YouMeUss</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-text-primary mt-4">
-            {done ? 'Password updated!' : 'Set new password'}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              letterSpacing: '-0.035em',
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.375rem',
+              lineHeight: 1.15,
+            }}
+          >
+            {done ? 'Password updated' : 'Set new password'}
           </h1>
-          <p className="text-text-secondary text-sm mt-1">
-            {done ? 'Redirecting you to login...' : 'Choose a strong password for your account'}
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+            {done ? 'Redirecting to login in a moment…' : 'Enter your new account password'}
           </p>
         </div>
 
-        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
+        {/* Card */}
+        <div
+          className="glass-elevated animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+        >
           {done ? (
-            /* Success state */
-            <div className="text-center space-y-4">
-              <div className="text-5xl">✅</div>
-              <p className="text-sm text-text-secondary">
-                Your password has been updated successfully.
-                You'll be redirected to the login page in a moment.
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  background: 'color-mix(in srgb, var(--color-green-500) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-green-500) 25%, transparent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <CheckCircle size={28} color="var(--color-green-500)" weight="fill" />
+              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                Your password has been successfully updated.
               </p>
               <Link
                 to="/login"
-                className="inline-block mt-2 text-sm text-brand-400 hover:text-brand-300 transition-colors no-underline font-medium"
+                className="btn-primary"
+                style={{ textDecoration: 'none', width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
               >
-                Go to login now →
+                Go to login now
               </Link>
             </div>
           ) : (
-            /* Form state */
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
               <div>
-                <label htmlFor="new-password" className="block text-sm font-medium text-text-secondary mb-1.5">
-                  New password
-                </label>
-                <input
-                  id="new-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min. 6 characters"
-                  autoComplete="new-password"
-                  autoFocus
-                  className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                             text-sm text-text-primary placeholder:text-text-muted
-                             focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                             transition-all duration-200"
-                />
+                <label htmlFor="new-password" style={labelStyle}>New password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="new-password"
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="input-base"
+                    autoComplete="new-password"
+                    autoFocus
+                    style={{ paddingRight: '2.75rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.875rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--color-text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0,
+                    }}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showPw ? <EyeSlash size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label htmlFor="confirm-new-password" className="block text-sm font-medium text-text-secondary mb-1.5">
-                  Confirm new password
-                </label>
+                <label htmlFor="confirm-new-password" style={labelStyle}>Confirm new password</label>
                 <input
                   id="confirm-new-password"
                   type="password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   placeholder="••••••••"
+                  className="input-base"
                   autoComplete="new-password"
-                  className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                             text-sm text-text-primary placeholder:text-text-muted
-                             focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                             transition-all duration-200"
                 />
               </div>
-
-              {/* Password strength hint */}
-              {password.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-surface-600 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: password.length >= 12 ? '100%' : password.length >= 8 ? '66%' : password.length >= 6 ? '33%' : '10%',
-                        background: password.length >= 12 ? '#22c55e' : password.length >= 8 ? '#eab308' : '#ef4444',
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-text-muted">
-                    {password.length >= 12 ? 'Strong' : password.length >= 8 ? 'Good' : 'Weak'}
-                  </span>
-                </div>
-              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white gradient-brand
-                           hover:opacity-90 transition-all duration-200 cursor-pointer border-none
-                           disabled:opacity-50 disabled:cursor-not-allowed glow-brand mt-2"
+                className="btn-primary"
+                style={{ justifyContent: 'center', marginTop: '0.25rem' }}
               >
-                {loading ? 'Updating...' : 'Update password'}
+                {loading ? 'Updating…' : 'Update password'}
               </button>
             </form>
           )}

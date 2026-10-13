@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X, Copy, Check, LinkSimple } from '@phosphor-icons/react';
 
 export default function InviteModal({ roomCode, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -24,60 +25,151 @@ export default function InviteModal({ roomCode, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* Modal */}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        background: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(8px)',
+      }}
+      onClick={onClose}
+    >
+      {/* Modal Card */}
       <div
-        className="relative glass rounded-2xl p-8 max-w-md w-full animate-scale-in"
+        className="glass-elevated animate-scale-in"
+        style={{
+          borderRadius: 'var(--radius-xl)',
+          padding: '2rem',
+          maxWidth: '440px',
+          width: '100%',
+          position: 'relative',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-surface-600 hover:bg-surface-500
-                     flex items-center justify-center text-text-muted hover:text-text-primary
-                     transition-all cursor-pointer border-none text-lg"
+          className="btn-icon"
+          style={{
+            position: 'absolute',
+            top: '1.25rem',
+            right: '1.25rem',
+            borderRadius: '8px',
+          }}
+          title="Close"
         >
-          ×
+          <X size={15} weight="bold" />
         </button>
 
-        <h2 className="text-xl font-bold text-text-primary mb-2">Invite Friends</h2>
-        <p className="text-sm text-text-secondary mb-6">Share this link to invite people to your room</p>
+        <h2
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            letterSpacing: '-0.025em',
+            color: 'var(--color-text-primary)',
+            marginBottom: '0.375rem',
+          }}
+        >
+          Invite Friends
+        </h2>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginBottom: '1.75rem' }}>
+          Share this link or code to invite people to your watch party.
+        </p>
 
         {/* Room Code */}
-        <div className="mb-4">
-          <label className="text-xs text-text-muted uppercase tracking-wider font-medium">Room Code</label>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-2xl font-bold tracking-[0.25em] gradient-brand-text">{roomCode}</span>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Room Code
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span
+              className="room-code"
+              style={{
+                fontSize: '1.25rem',
+                padding: '0.4rem 1rem',
+                letterSpacing: '0.22em',
+              }}
+            >
+              {roomCode}
+            </span>
           </div>
         </div>
 
         {/* Invite Link */}
-        <div className="mb-6">
-          <label className="text-xs text-text-muted uppercase tracking-wider font-medium">Invite Link</label>
-          <div className="mt-1 flex items-center gap-2">
-            <div className="flex-1 bg-surface-700 rounded-lg px-4 py-3 text-sm text-text-secondary truncate border border-surface-400/20">
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+              marginBottom: '0.5rem',
+            }}
+          >
+            Invite Link
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div
+              style={{
+                flex: 1,
+                background: 'var(--color-surface-800)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.625rem 0.875rem',
+                fontSize: '0.8125rem',
+                color: 'var(--color-text-secondary)',
+                border: '1px solid color-mix(in srgb, white 7%, transparent)',
+                fontFamily: 'var(--font-mono)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {inviteLink}
             </div>
             <button
               onClick={copyToClipboard}
-              className={`px-5 py-3 rounded-lg text-sm font-semibold text-white transition-all duration-200
-                         cursor-pointer border-none whitespace-nowrap
-                         ${copied
-                           ? 'bg-success'
-                           : 'gradient-brand hover:opacity-90 glow-brand'
-                         }`}
+              className="btn-primary"
+              style={{
+                flexShrink: 0,
+                padding: '0.625rem 1rem',
+                fontSize: '0.8125rem',
+                gap: '0.375rem',
+              }}
             >
-              {copied ? '✓ Copied!' : 'Copy'}
+              {copied ? <Check size={14} weight="bold" /> : <Copy size={14} weight="bold" />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>
 
         {/* Tip */}
-        <p className="text-xs text-text-muted text-center">
-          Anyone with this link can join your room 🎬
+        <p style={{
+          fontSize: '0.75rem',
+          color: 'var(--color-text-muted)',
+          textAlign: 'center',
+          margin: 0,
+          borderTop: '1px solid color-mix(in srgb, white 5%, transparent)',
+          paddingTop: '1rem',
+        }}>
+          Anyone with this link or code can join immediately — no download required.
         </p>
       </div>
     </div>

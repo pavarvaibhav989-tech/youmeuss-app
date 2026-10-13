@@ -49,41 +49,7 @@ export default function ChatPanel({ messages, typingUsers, onSendMessage, onTypi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <div
-        style={{
-          padding: '0.875rem 1rem',
-          borderBottom: '1px solid color-mix(in srgb, white 5%, transparent)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexShrink: 0,
-        }}
-      >
-        <ChatCircle size={15} color="var(--color-text-muted)" />
-        <span
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontSize: '0.8125rem',
-            fontWeight: 600,
-            color: 'var(--color-text-primary)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          Chat
-        </span>
-        {messages.length > 0 && (
-          <span
-            style={{
-              fontSize: '0.6875rem',
-              color: 'var(--color-text-muted)',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            {messages.length}
-          </span>
-        )}
-      </div>
+      {/* Messages */}
 
       {/* Messages */}
       <div

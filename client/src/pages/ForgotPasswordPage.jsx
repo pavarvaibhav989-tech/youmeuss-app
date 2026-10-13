@@ -1,15 +1,16 @@
 import { useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
+import { FilmSlate, EnvelopeSimple, ArrowLeft } from '@phosphor-icons/react';
 import api from '../lib/api';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]     = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const { addToast } = useToast();
+  const [sent, setSent]       = useState(false);
+  const { addToast }          = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,54 +31,158 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: 'var(--color-surface-950)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem 1.5rem',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
       <Suspense fallback={null}>
         <ParticleBackground />
       </Suspense>
-      {/* Background blobs */}
-      <div className="absolute inset-0 bg-surface-900">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent-500/10 rounded-full blur-[120px]" />
-      </div>
 
-      <div className="relative w-full max-w-md">
+      {/* Subtle ambient glow */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '-10%',
+          right: '-8%',
+          width: '480px',
+          height: '480px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--color-rose-500) 7%, transparent) 0%, transparent 65%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '400px',
+          zIndex: 1,
+        }}
+      >
+        {/* Logo */}
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            textDecoration: 'none',
+            marginBottom: '2rem',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FilmSlate size={16} color="white" weight="fill" />
+          </div>
+          <span
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.125rem',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              color: 'var(--color-text-primary)',
+            }}
+          >
+            YouMe<span style={{ color: 'var(--color-rose-500)' }}>Uss</span>
+          </span>
+        </Link>
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/login" className="inline-flex items-center gap-2 no-underline mb-4">
-            <span className="text-3xl">🎬</span>
-            <span className="text-2xl font-bold gradient-brand-text">YouMeUss</span>
-          </Link>
-          <h1 className="text-2xl font-bold text-text-primary mt-4">Forgot your password?</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Enter your email and we'll send you a reset link
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '1.75rem',
+              fontWeight: 700,
+              letterSpacing: '-0.035em',
+              color: 'var(--color-text-primary)',
+              marginBottom: '0.375rem',
+              lineHeight: 1.15,
+            }}
+          >
+            {sent ? 'Check your inbox' : 'Forgot password?'}
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+            {sent ? 'A reset link was dispatched to your email' : 'Enter your email to receive a password reset link'}
           </p>
         </div>
 
-        <div className="glass rounded-2xl p-5 sm:p-8 animate-scale-in">
+        {/* Card */}
+        <div
+          className="glass-elevated animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+        >
           {sent ? (
-            /* Success state */
-            <div className="text-center space-y-4">
-              <div className="text-5xl">📬</div>
-              <h2 className="text-lg font-semibold text-text-primary">Check your inbox</h2>
-              <p className="text-sm text-text-secondary leading-relaxed">
-                If <span className="text-text-primary font-medium">{email}</span> is registered,
-                you'll receive a reset link shortly. The link expires in <strong>1 hour</strong>.
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  background: 'color-mix(in srgb, var(--color-rose-500) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--color-rose-500) 25%, transparent)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <EnvelopeSimple size={28} color="var(--color-rose-400)" weight="duotone" />
+              </div>
+
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                If <strong style={{ color: 'var(--color-text-primary)' }}>{email}</strong> is registered, you’ll receive a link shortly. The link expires in 1 hour.
               </p>
-              <p className="text-xs text-text-muted">
-                Don't see it? Check your spam folder.
-              </p>
+
               <Link
                 to="/login"
-                className="inline-block mt-2 text-sm text-brand-400 hover:text-brand-300 transition-colors no-underline"
+                className="btn-primary"
+                style={{
+                  width: '100%',
+                  justifyContent: 'center',
+                  textDecoration: 'none',
+                  marginTop: '0.5rem',
+                }}
               >
-                ← Back to login
+                <ArrowLeft size={14} weight="bold" />
+                Back to sign in
               </Link>
             </div>
           ) : (
-            /* Form state */
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <label htmlFor="forgot-email" className="block text-sm font-medium text-text-secondary mb-1.5">
+                <label
+                  htmlFor="forgot-email"
+                  style={{
+                    display: 'block',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    color: 'var(--color-text-muted)',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   Email address
                 </label>
                 <input
@@ -86,28 +191,27 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  className="input-base"
                   autoComplete="email"
                   autoFocus
-                  className="w-full bg-surface-700 border border-surface-400/20 rounded-xl px-4 py-3
-                             text-sm text-text-primary placeholder:text-text-muted
-                             focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/20
-                             transition-all duration-200"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white gradient-brand
-                           hover:opacity-90 transition-all duration-200 cursor-pointer border-none
-                           disabled:opacity-50 disabled:cursor-not-allowed glow-brand"
+                className="btn-primary"
+                style={{ justifyContent: 'center' }}
               >
-                {loading ? 'Sending...' : 'Send reset link'}
+                {loading ? 'Sending link…' : 'Send reset link'}
               </button>
 
-              <p className="text-center text-sm text-text-muted">
-                Remember it?{' '}
-                <Link to="/login" className="text-brand-400 hover:text-brand-300 transition-colors no-underline font-medium">
+              <p style={{ textAlign: 'center', fontSize: '0.8125rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                Remembered your password?{' '}
+                <Link
+                  to="/login"
+                  style={{ color: 'var(--color-rose-400)', textDecoration: 'none', fontWeight: 500 }}
+                >
                   Sign in
                 </Link>
               </p>

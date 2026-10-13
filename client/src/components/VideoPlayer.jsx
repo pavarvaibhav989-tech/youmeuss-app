@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { FilmSlate, WarningCircle } from '@phosphor-icons/react';
 
 // ─── URL helpers ──────────────────────────────────────────────────────────────
 
@@ -62,19 +63,35 @@ function loadYTApi() {
   });
 }
 
+function SyncBadge() {
+  return (
+    <div style={{
+      position: 'absolute', top: '12px', left: '12px', zIndex: 10,
+      padding: '4px 12px', borderRadius: '999px',
+      background: 'color-mix(in srgb, var(--color-surface-950) 80%, transparent)',
+      border: '1px solid color-mix(in srgb, var(--color-rose-500) 30%, transparent)',
+      backdropFilter: 'blur(12px)',
+      fontSize: '11px', color: 'var(--color-rose-400)',
+      fontFamily: 'var(--font-mono)',
+      display: 'flex', alignItems: 'center', gap: '6px',
+    }}>
+      <span style={{
+        width: '6px', height: '6px', borderRadius: '50%',
+        background: 'var(--color-rose-500)', display: 'inline-block',
+        boxShadow: '0 0 6px var(--color-rose-500)',
+      }} />
+      Syncing…
+    </div>
+  );
+}
+
 /**
  * YouTube player using the official IFrame Player API.
- *
- * HOST:   Player state changes (play/pause) trigger onPlay/onPause callbacks
- *         which propagate to other participants via socket.
- * CLIENT: Responds to isPlaying/currentTime/isSyncing props by commanding
- *         the player to play, pause, or seek.
  */
 function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay, onPause }) {
   const wrapperRef = useRef(null);
   const playerRef  = useRef(null);
 
-  // Keep latest callbacks + flags in refs so stale closures never capture old values
   const isHostRef  = useRef(isHost);
   const onPlayRef  = useRef(onPlay);
   const onPauseRef = useRef(onPause);
@@ -82,11 +99,9 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
   useEffect(() => { onPlayRef.current  = onPlay;  }, [onPlay]);
   useEffect(() => { onPauseRef.current = onPause; }, [onPause]);
 
-  // ── Initialize YT player when ytId changes ─────────────────────────────────
   useEffect(() => {
     if (!wrapperRef.current) return;
 
-    // Create a fresh mount-point div inside the wrapper
     wrapperRef.current.innerHTML = '';
     const mount = document.createElement('div');
     wrapperRef.current.appendChild(mount);
@@ -94,7 +109,7 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
     let player;
 
     loadYTApi().then(() => {
-      if (!wrapperRef.current) return; // component unmounted while API was loading
+      if (!wrapperRef.current) return;
 
       player = new window.YT.Player(mount, {
         videoId: ytId,
@@ -106,7 +121,6 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
             playerRef.current = player;
           },
           onStateChange({ data }) {
-            // Only the host reports state changes to the room
             if (!isHostRef.current || !playerRef.current) return;
             const YT = window.YT;
             if (data === YT.PlayerState.PLAYING) {
@@ -125,16 +139,14 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
     };
   }, [ytId]);
 
-  // ── Sync play/pause state for non-host participants ────────────────────────
   useEffect(() => {
     const p = playerRef.current;
-    if (!p || isHost) return; // host controls via native YT controls
+    if (!p || isHost) return;
     try {
       isPlaying ? p.playVideo() : p.pauseVideo();
     } catch (_) {}
   }, [isPlaying, isHost]);
 
-  // ── Seek when a sync correction arrives ───────────────────────────────────
   useEffect(() => {
     const p = playerRef.current;
     if (!p || !isSyncing || currentTime == null) return;
@@ -145,34 +157,25 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
   }, [currentTime, isSyncing]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
+    <div style={{
+      position: 'relative', width: '100%', aspectRatio: '16/9',
+      borderRadius: 'var(--radius-xl)', overflow: 'hidden', background: '#000',
+      border: '1px solid color-mix(in srgb, white 6%, transparent)',
+    }}>
       <div ref={wrapperRef} style={{ position: 'absolute', inset: 0 }} />
-      {isSyncing && (
-        <div style={{
-          position: 'absolute', top: '12px', left: '12px', zIndex: 10,
-          padding: '4px 12px', borderRadius: '999px',
-          background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-          fontSize: '11px', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '6px',
-        }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }} />
-          Syncing...
-        </div>
-      )}
+      {isSyncing && <SyncBadge />}
     </div>
   );
 }
 
-
 /**
  * Native HTML5 video player for remote server-hosted files.
- * More reliable than ReactPlayer for direct MP4/WebM URLs.
  */
 function FileVideoPlayer({ cleanUrl, isPlaying, currentTime, isSyncing, isHost, onPlay, onPause, onSeek }) {
   const videoRef = useRef(null);
   const [error, setError] = useState(false);
   const lastTimeRef = useRef(0);
 
-  // Sync play/pause from socket
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -180,7 +183,6 @@ function FileVideoPlayer({ cleanUrl, isPlaying, currentTime, isSyncing, isHost, 
     else if (!isPlaying && !v.paused) v.pause();
   }, [isPlaying]);
 
-  // Seek when syncing
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !isSyncing || currentTime == null) return;
@@ -204,23 +206,36 @@ function FileVideoPlayer({ cleanUrl, isPlaying, currentTime, isSyncing, isHost, 
   if (error) {
     return (
       <div style={{
-        width: '100%', aspectRatio: '16/9', background: '#1a1a2e',
-        borderRadius: '12px', display: 'flex', flexDirection: 'column',
+        width: '100%', aspectRatio: '16/9',
+        background: 'var(--color-surface-900)',
+        borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        border: '1px solid rgba(239,68,68,0.3)', padding: '24px', textAlign: 'center',
+        border: '1px solid color-mix(in srgb, var(--color-red-500) 25%, transparent)',
+        padding: '24px', textAlign: 'center',
       }}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
-        <p style={{ color: '#fc8181', fontSize: '14px', fontWeight: 600, margin: '0 0 8px' }}>Failed to load video</p>
-        <p style={{ color: '#718096', fontSize: '12px', maxWidth: '320px', lineHeight: 1.6, margin: 0 }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '12px',
+          background: 'color-mix(in srgb, var(--color-red-500) 12%, transparent)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '12px',
+        }}>
+          <WarningCircle size={22} color="var(--color-red-500)" weight="fill" />
+        </div>
+        <p style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: 600, margin: '0 0 6px' }}>Failed to load video</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '12px', maxWidth: '320px', lineHeight: 1.6, margin: 0 }}>
           Could not play this file. Make sure the server is running and the file is MP4 or WebM.
         </p>
-        <p style={{ color: '#4a5568', fontSize: '11px', marginTop: '8px', wordBreak: 'break-all' }}>{cleanUrl}</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '11px', marginTop: '8px', wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>{cleanUrl}</p>
       </div>
     );
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
+    <div style={{
+      position: 'relative', width: '100%', aspectRatio: '16/9',
+      borderRadius: 'var(--radius-xl)', overflow: 'hidden', background: '#000',
+      border: '1px solid color-mix(in srgb, white 6%, transparent)',
+    }}>
       <video
         ref={videoRef}
         src={cleanUrl}
@@ -232,24 +247,13 @@ function FileVideoPlayer({ cleanUrl, isPlaying, currentTime, isSyncing, isHost, 
         onError={() => { console.error('[VideoPlayer] Failed to load:', cleanUrl); setError(true); }}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
       />
-      {isSyncing && (
-        <div style={{
-          position: 'absolute', top: '12px', left: '12px', zIndex: 10,
-          padding: '4px 12px', borderRadius: '999px',
-          background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-          fontSize: '11px', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '6px',
-        }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }} />
-          Syncing...
-        </div>
-      )}
+      {isSyncing && <SyncBadge />}
     </div>
   );
 }
 
 /**
  * Native HTML5 <video> player for blob URLs from file uploads.
- * ReactPlayer doesn't reliably handle blob: URLs, so we bypass it entirely.
  */
 function NativeVideoPlayer({ src, isSyncing }) {
   const videoRef = useRef(null);
@@ -262,14 +266,23 @@ function NativeVideoPlayer({ src, isSyncing }) {
   if (error) {
     return (
       <div style={{
-        width: '100%', aspectRatio: '16/9', background: '#1a1a2e',
-        borderRadius: '12px', display: 'flex', flexDirection: 'column',
+        width: '100%', aspectRatio: '16/9',
+        background: 'var(--color-surface-900)',
+        borderRadius: 'var(--radius-xl)', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        border: '1px solid rgba(239,68,68,0.3)', padding: '24px', textAlign: 'center',
+        border: '1px solid color-mix(in srgb, var(--color-red-500) 25%, transparent)',
+        padding: '24px', textAlign: 'center',
       }}>
-        <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
-        <p style={{ color: '#fc8181', fontSize: '14px', fontWeight: 600, margin: '0 0 8px' }}>Failed to play video</p>
-        <p style={{ color: '#718096', fontSize: '12px', maxWidth: '320px', lineHeight: 1.6, margin: 0 }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '12px',
+          background: 'color-mix(in srgb, var(--color-red-500) 12%, transparent)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: '12px',
+        }}>
+          <WarningCircle size={22} color="var(--color-red-500)" weight="fill" />
+        </div>
+        <p style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: 600, margin: '0 0 6px' }}>Failed to play video</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '12px', maxWidth: '320px', lineHeight: 1.6, margin: 0 }}>
           This file format may not be supported by your browser. Try MP4 or WebM.
         </p>
       </div>
@@ -277,7 +290,11 @@ function NativeVideoPlayer({ src, isSyncing }) {
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', background: '#000' }}>
+    <div style={{
+      position: 'relative', width: '100%', aspectRatio: '16/9',
+      borderRadius: 'var(--radius-xl)', overflow: 'hidden', background: '#000',
+      border: '1px solid color-mix(in srgb, white 6%, transparent)',
+    }}>
       <video
         ref={videoRef}
         src={src}
@@ -286,17 +303,7 @@ function NativeVideoPlayer({ src, isSyncing }) {
         onError={() => setError(true)}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
       />
-      {isSyncing && (
-        <div style={{
-          position: 'absolute', top: '12px', left: '12px', zIndex: 10,
-          padding: '4px 12px', borderRadius: '999px',
-          background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
-          fontSize: '11px', color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '6px',
-        }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a78bfa', display: 'inline-block' }} />
-          Syncing...
-        </div>
-      )}
+      {isSyncing && <SyncBadge />}
     </div>
   );
 }
@@ -322,15 +329,65 @@ export default function VideoPlayer({
   if (!cleanUrl) {
     return (
       <div style={{
-        width: '100%', aspectRatio: '16/9', background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-        borderRadius: '12px', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        border: '1px solid rgba(255,255,255,0.08)',
+        width: '100%',
+        aspectRatio: '16/9',
+        background: 'var(--color-surface-900)',
+        borderRadius: 'var(--radius-xl)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid color-mix(in srgb, white 6%, transparent)',
+        padding: '2rem',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ fontSize: '56px', marginBottom: '16px' }}>🎬</div>
-        <p style={{ color: '#a0aec0', fontSize: '16px', fontWeight: 600, margin: 0 }}>No video loaded</p>
-        <p style={{ color: '#718096', fontSize: '13px', marginTop: '8px', textAlign: 'center', maxWidth: '280px', lineHeight: 1.5 }}>
-          Paste a YouTube link below and click Load
+        {/* Subtle rose radial ambient */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            width: '260px',
+            height: '260px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, color-mix(in srgb, var(--color-rose-500) 8%, transparent) 0%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
+          background: 'var(--color-surface-800)',
+          border: '1px solid color-mix(in srgb, white 8%, transparent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '1rem',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+          position: 'relative',
+        }}>
+          <FilmSlate size={26} color="var(--color-rose-400)" weight="duotone" />
+        </div>
+        <p style={{
+          color: 'var(--color-text-primary)',
+          fontSize: '0.9375rem',
+          fontWeight: 600,
+          fontFamily: 'var(--font-sans)',
+          letterSpacing: '-0.02em',
+          margin: 0,
+        }}>
+          No video loaded
+        </p>
+        <p style={{
+          color: 'var(--color-text-muted)',
+          fontSize: '0.8125rem',
+          marginTop: '0.375rem',
+          textAlign: 'center',
+          maxWidth: '320px',
+          lineHeight: 1.5,
+        }}>
+          Paste a YouTube or video URL above and click Load
         </p>
       </div>
     );

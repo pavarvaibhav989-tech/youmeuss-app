@@ -1,20 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { VideoCamera, MicrophoneSlash, Microphone, VideoCameraSlash, PhoneDisconnect, PhoneCall } from '@phosphor-icons/react';
 
 export default function VideoCall({
-  localStream,
-  remoteStreams,
-  isCallActive,
-  isMuted,
-  isCameraOff,
-  onStartCall,
-  onEndCall,
-  onToggleMute,
-  onToggleCamera,
+  localStream, remoteStreams, isCallActive,
+  isMuted, isCameraOff,
+  onStartCall, onEndCall, onToggleMute, onToggleCamera,
 }) {
   const localVideoRef = useRef(null);
-  const remoteVideoRefs = useRef(new Map());
 
-  // Attach local stream to video element
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
@@ -23,47 +16,78 @@ export default function VideoCall({
 
   if (!isCallActive) {
     return (
-      <div className="flex items-center justify-center p-4">
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        gap: '1.25rem',
+        padding: '1.5rem',
+      }}>
+        {/* Illustration */}
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: 'var(--radius-xl)',
+          background: 'var(--color-surface-800)',
+          border: '1px solid color-mix(in srgb, white 6%, transparent)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: 'inset 0 1px 0 color-mix(in srgb, white 8%, transparent)',
+        }}>
+          <VideoCamera size={28} color="var(--color-text-muted)" weight="duotone" />
+        </div>
+
+        <div style={{ textAlign: 'center', gap: '0.375rem', display: 'flex', flexDirection: 'column' }}>
+          <p style={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            color: 'var(--color-text-primary)',
+            letterSpacing: '-0.01em',
+          }}>
+            Start a video call
+          </p>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+            Watch together, face to face
+          </p>
+        </div>
+
         <button
           onClick={onStartCall}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-brand text-white
-                     text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer
-                     border-none glow-brand"
+          className="btn-primary"
+          style={{ gap: '0.5rem', padding: '0.625rem 1.5rem' }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-          </svg>
-          Start Video Call
+          <PhoneCall size={15} weight="fill" />
+          Join call
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3 p-3">
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0.75rem',
+      padding: '0.875rem',
+      height: '100%',
+    }}>
       {/* Video grid */}
-      <div className="grid grid-cols-2 gap-2">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: remoteStreams.size > 0 ? '1fr 1fr' : '1fr',
+        gap: '0.5rem',
+        flex: 1,
+      }}>
         {/* Local video */}
-        <div className="relative aspect-video bg-surface-800 rounded-lg overflow-hidden">
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className={`w-full h-full object-cover ${isCameraOff ? 'hidden' : ''}`}
-          />
-          {isCameraOff && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-12 h-12 rounded-full gradient-brand flex items-center justify-center text-white text-lg font-bold">
-                You
-              </div>
-            </div>
-          )}
-          <div className="absolute bottom-1 left-1 px-2 py-0.5 rounded-md glass text-[10px] text-text-secondary">
-            You {isMuted && '🔇'}
-          </div>
-        </div>
+        <LocalVideo
+          videoRef={localVideoRef}
+          isCameraOff={isCameraOff}
+          isMuted={isMuted}
+          label="You"
+        />
 
         {/* Remote videos */}
         {Array.from(remoteStreams.entries()).map(([userId, stream]) => (
@@ -71,64 +95,176 @@ export default function VideoCall({
         ))}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
-        <button
+      {/* Controls bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.625rem',
+        flexShrink: 0,
+        padding: '0.25rem 0 0',
+      }}>
+        {/* Mic */}
+        <CallControlBtn
           onClick={onToggleMute}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer
-                      transition-all duration-200
-                      ${isMuted ? 'bg-error text-white' : 'bg-surface-600 text-text-primary hover:bg-surface-500'}`}
-          title={isMuted ? 'Unmute' : 'Mute'}
-        >
-          {isMuted ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
-              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .64-.09 1.27-.25 1.86"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
-          )}
-        </button>
+          active={!isMuted}
+          danger={isMuted}
+          label={isMuted ? 'Unmute' : 'Mute'}
+          icon={isMuted
+            ? <MicrophoneSlash size={16} weight="fill" />
+            : <Microphone size={16} weight="fill" />
+          }
+        />
 
-        <button
+        {/* Camera */}
+        <CallControlBtn
           onClick={onToggleCamera}
-          className={`w-10 h-10 rounded-full flex items-center justify-center border-none cursor-pointer
-                      transition-all duration-200
-                      ${isCameraOff ? 'bg-error text-white' : 'bg-surface-600 text-text-primary hover:bg-surface-500'}`}
-          title={isCameraOff ? 'Turn on camera' : 'Turn off camera'}
-        >
-          {isCameraOff ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-              <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="23 7 16 12 23 17 23 7"></polygon>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-            </svg>
-          )}
-        </button>
+          active={!isCameraOff}
+          danger={isCameraOff}
+          label={isCameraOff ? 'Turn on camera' : 'Turn off camera'}
+          icon={isCameraOff
+            ? <VideoCameraSlash size={16} weight="fill" />
+            : <VideoCamera size={16} weight="fill" />
+          }
+        />
 
+        {/* End call — larger, red */}
         <button
           onClick={onEndCall}
-          className="w-12 h-10 rounded-full bg-error text-white flex items-center justify-center
-                     border-none cursor-pointer hover:bg-red-600 transition-colors"
           title="End call"
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            background: 'var(--color-red-500)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            transition: 'background 150ms, transform 150ms',
+            boxShadow: '0 2px 8px color-mix(in srgb, var(--color-red-500) 35%, transparent)',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--color-red-500)'}
+          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path>
-            <line x1="23" y1="1" x2="1" y2="23"></line>
-          </svg>
+          <PhoneDisconnect size={18} weight="fill" />
         </button>
+      </div>
+    </div>
+  );
+}
+
+function CallControlBtn({ onClick, active, danger, label, icon }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: danger
+          ? 'color-mix(in srgb, var(--color-red-500) 15%, transparent)'
+          : 'var(--color-surface-700)',
+        border: '1px solid',
+        borderColor: danger
+          ? 'color-mix(in srgb, var(--color-red-500) 30%, transparent)'
+          : 'color-mix(in srgb, white 8%, transparent)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: danger ? 'var(--color-red-500)' : 'var(--color-text-secondary)',
+        transition: 'background 150ms, transform 150ms, color 150ms',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = danger
+          ? 'color-mix(in srgb, var(--color-red-500) 22%, transparent)'
+          : 'var(--color-surface-600)';
+        e.currentTarget.style.color = danger ? 'var(--color-red-500)' : 'var(--color-text-primary)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = danger
+          ? 'color-mix(in srgb, var(--color-red-500) 15%, transparent)'
+          : 'var(--color-surface-700)';
+        e.currentTarget.style.color = danger ? 'var(--color-red-500)' : 'var(--color-text-secondary)';
+      }}
+      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.94)'}
+      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function LocalVideo({ videoRef, isCameraOff, isMuted, label }) {
+  return (
+    <div style={{
+      position: 'relative',
+      aspectRatio: '16/9',
+      borderRadius: 'var(--radius-lg)',
+      overflow: 'hidden',
+      background: 'var(--color-surface-800)',
+      border: '1px solid color-mix(in srgb, white 6%, transparent)',
+    }}>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          display: isCameraOff ? 'none' : 'block',
+        }}
+      />
+      {isCameraOff && (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%',
+            background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '1rem',
+            fontWeight: 700,
+          }}>
+            Y
+          </div>
+        </div>
+      )}
+      {/* Name tag */}
+      <div style={{
+        position: 'absolute',
+        bottom: '0.5rem',
+        left: '0.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.25rem',
+        background: 'color-mix(in srgb, black 55%, transparent)',
+        backdropFilter: 'blur(8px)',
+        padding: '0.2rem 0.5rem',
+        borderRadius: '9999px',
+        fontSize: '0.6875rem',
+        color: 'white',
+        fontWeight: 500,
+      }}>
+        {label}
+        {isMuted && <MicrophoneSlash size={10} weight="fill" style={{ opacity: 0.8 }} />}
       </div>
     </div>
   );
@@ -144,15 +280,33 @@ function RemoteVideo({ userId, stream }) {
   }, [stream]);
 
   return (
-    <div className="relative aspect-video bg-surface-800 rounded-lg overflow-hidden">
+    <div style={{
+      position: 'relative',
+      aspectRatio: '16/9',
+      borderRadius: 'var(--radius-lg)',
+      overflow: 'hidden',
+      background: 'var(--color-surface-800)',
+      border: '1px solid color-mix(in srgb, white 6%, transparent)',
+    }}>
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-cover"
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
       />
-      <div className="absolute bottom-1 left-1 px-2 py-0.5 rounded-md glass text-[10px] text-text-secondary">
-        Peer
+      <div style={{
+        position: 'absolute',
+        bottom: '0.5rem',
+        left: '0.5rem',
+        background: 'color-mix(in srgb, black 55%, transparent)',
+        backdropFilter: 'blur(8px)',
+        padding: '0.2rem 0.5rem',
+        borderRadius: '9999px',
+        fontSize: '0.6875rem',
+        color: 'white',
+        fontWeight: 500,
+      }}>
+        {userId.slice(0, 6)}
       </div>
     </div>
   );
