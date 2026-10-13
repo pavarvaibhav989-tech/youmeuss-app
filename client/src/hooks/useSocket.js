@@ -1,12 +1,13 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { getSocket, disconnectSocket } from '../lib/socket';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { getSocket } from '../lib/socket';
 
 /**
  * Hook for managing socket connection lifecycle.
  * Connects on mount, joins room, cleans up on unmount.
  */
 export function useSocket(roomId) {
-  const socketRef = useRef(null);
+  const [socketInstance] = useState(() => (typeof window !== 'undefined' ? getSocket() : null));
+  const socketRef = useRef(socketInstance);
 
   useEffect(() => {
     const socket = getSocket();
@@ -40,7 +41,7 @@ export function useSocket(roomId) {
     };
   }, []);
 
-  return { socket: socketRef.current, emit, on };
+  return { socket: socketInstance, emit, on };
 }
 
 export default useSocket;

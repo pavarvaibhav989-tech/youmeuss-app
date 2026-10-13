@@ -118,7 +118,6 @@ export class ParticleEngine {
       }
 
       // Wrap into a function
-      // eslint-disable-next-line no-new-func
       this._compiledFn = new Function(
         'i', 'count', 'target', 'color', 'time', 'THREE',
         'addControl', 'setInfo', 'annotate',

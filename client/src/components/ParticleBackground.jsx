@@ -109,7 +109,6 @@ export default function ParticleBackground() {
     let rafId;
     let startTime = performance.now();
 
-    const halfW = 100;
     const halfH = 60;
 
     const tick = () => {

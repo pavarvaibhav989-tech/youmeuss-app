@@ -6,38 +6,36 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem('accessToken'));
 
   // Check for existing session on mount
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    if (token) {
-      api.get('/auth/me')
-        .then(({ data }) => setUser(data.user))
-        .catch(() => {
-          // Try refresh token before giving up
-          const refreshToken = localStorage.getItem('refreshToken');
-          if (refreshToken) {
-            return api.post('/auth/refresh', { refreshToken })
-              .then(({ data }) => {
-                localStorage.setItem('accessToken', data.accessToken);
-                localStorage.setItem('refreshToken', data.refreshToken);
-                return api.get('/auth/me');
-              })
-              .then(({ data }) => setUser(data.user))
-              .catch(() => {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-              });
-          } else {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-          }
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    if (!token) return;
+
+    api.get('/auth/me')
+      .then(({ data }) => setUser(data.user))
+      .catch(() => {
+        // Try refresh token before giving up
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          return api.post('/auth/refresh', { refreshToken })
+            .then(({ data }) => {
+              localStorage.setItem('accessToken', data.accessToken);
+              localStorage.setItem('refreshToken', data.refreshToken);
+              return api.get('/auth/me');
+            })
+            .then(({ data }) => setUser(data.user))
+            .catch(() => {
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+            });
+        } else {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   // Listen for socket auth expiry event

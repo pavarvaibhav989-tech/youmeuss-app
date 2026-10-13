@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ParticleEngine } from './ParticleEngine';
 import { PRESETS } from './presets';
 import Navbar from '../../components/Navbar';
@@ -70,7 +69,7 @@ function ControlSlider({ id, label, min, max, value, onChange }) {
 }
 
 /* ── Annotation dot ────────────────────────────────────── */
-function AnnotationOverlay({ annotations, camera, renderer }) {
+function AnnotationOverlay({ annotations }) {
   // We just show a legend instead of true 3D projection for simplicity
   if (!annotations || annotations.length === 0) return null;
   return (
@@ -87,7 +86,6 @@ function AnnotationOverlay({ annotations, camera, renderer }) {
 
 /* ── Main page ─────────────────────────────────────────── */
 export default function ParticleLabPage() {
-  const navigate    = useNavigate();
   const canvasRef   = useRef(null);
   const engineRef   = useRef(null);
   const dragRef     = useRef(null);

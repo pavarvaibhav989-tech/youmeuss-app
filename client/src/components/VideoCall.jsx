@@ -158,7 +158,7 @@ export default function VideoCall({
   );
 }
 
-function CallControlBtn({ onClick, active, danger, label, icon }) {
+function CallControlBtn({ onClick, danger, label, icon }) {
   return (
     <button
       onClick={onClick}

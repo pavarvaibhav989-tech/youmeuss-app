@@ -1,7 +1,6 @@
 /**
- * Database schema initialization for YouMeUss.
- * Creates all required tables if they don't exist.
- * Uses sql.js API (db.run for each statement).
+ * Database schema initialization for YouMeUss (SQLite / sql.js).
+ * Creates all required tables and runs safe migrations.
  */
 export function initializeSchema(db) {
   db.run(`
@@ -11,9 +10,23 @@ export function initializeSchema(db) {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       avatar_url TEXT,
+      reset_token TEXT,
+      reset_expires DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Migrate existing tables if reset columns don't exist yet
+  try {
+    db.run('ALTER TABLE users ADD COLUMN reset_token TEXT');
+  } catch {
+    // Column already exists
+  }
+  try {
+    db.run('ALTER TABLE users ADD COLUMN reset_expires DATETIME');
+  } catch {
+    // Column already exists
+  }
 
   db.run(`
     CREATE TABLE IF NOT EXISTS rooms (
@@ -69,6 +82,7 @@ export function initializeSchema(db) {
   db.run('CREATE INDEX IF NOT EXISTS idx_participants_room ON participants(room_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_messages_room ON messages(room_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_videos_room ON videos(room_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)');
 
-  console.log('✅ Database schema initialized');
+  console.log('✅ SQLite database schema initialized');
 }

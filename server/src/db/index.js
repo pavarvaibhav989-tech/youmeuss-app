@@ -1,11 +1,20 @@
 import pg from 'pg';
+import initSqlJs from 'sql.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { initializeSchema as initSqliteSchema } from './schema.js';
+
 const { Pool } = pg;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH = path.join(__dirname, '..', '..', 'youmeuss.db');
 
 let pool = null;
+let sqliteDb = null;
+let isPostgres = false;
 
 /**
  * Convert SQLite-style ? placeholders to PostgreSQL $1, $2, ... style.
- * This lets all existing queries work without changes.
  */
 function toPgSql(sql) {
   let i = 0;
@@ -13,48 +22,80 @@ function toPgSql(sql) {
 }
 
 /**
- * Initialize the PostgreSQL connection pool.
- * Reads DATABASE_URL from environment (set automatically by Railway Postgres plugin).
- * Falls back gracefully if DATABASE_URL is missing (dev without Postgres).
+ * Save SQLite to disk if using local file storage.
  */
-export async function initDb() {
-  if (pool) return pool;
-
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    console.warn('⚠️  DATABASE_URL not set — using in-memory fallback (data will not persist)');
-    // Graceful fallback: use a mock that logs but doesn't crash
-    pool = { query: async () => ({ rows: [] }), end: () => {} };
-    return pool;
+export function saveDb() {
+  if (sqliteDb) {
+    try {
+      const data = sqliteDb.export();
+      fs.writeFileSync(DB_PATH, Buffer.from(data));
+    } catch (err) {
+      console.error('Failed to save SQLite DB:', err.message);
+    }
   }
-
-  pool = new Pool({
-    connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
-  });
-
-  // Test the connection
-  try {
-    const client = await pool.connect();
-    client.release();
-    console.log('✅ PostgreSQL connected');
-  } catch (err) {
-    console.error('❌ PostgreSQL connection failed:', err.message);
-    throw err;
-  }
-
-  await initializeSchema();
-  return pool;
 }
 
 /**
- * Create tables if they don't exist.
+ * Initialize the database connection.
+ * Uses PostgreSQL if DATABASE_URL is configured (Railway production),
+ * otherwise falls back seamlessly to SQLite (sql.js) for local development.
  */
-async function initializeSchema() {
+export async function initDb() {
+  if (pool || sqliteDb) return pool || sqliteDb;
+
+  const connectionString = process.env.DATABASE_URL;
+
+  if (connectionString) {
+    try {
+      pool = new Pool({
+        connectionString,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+      });
+
+      const client = await pool.connect();
+      client.release();
+      isPostgres = true;
+      console.log('✅ PostgreSQL connected');
+      await initializePgSchema();
+      return pool;
+    } catch (err) {
+      console.warn('⚠️  PostgreSQL connection failed, falling back to SQLite:', err.message);
+      pool = null;
+    }
+  }
+
+  // SQLite fallback
+  console.log('💾 Using SQLite database at', DB_PATH);
+  const SQL = await initSqlJs();
+  if (fs.existsSync(DB_PATH)) {
+    try {
+      const buffer = fs.readFileSync(DB_PATH);
+      sqliteDb = new SQL.Database(buffer);
+    } catch {
+      sqliteDb = new SQL.Database();
+    }
+  } else {
+    sqliteDb = new SQL.Database();
+  }
+
+  sqliteDb.run('PRAGMA foreign_keys = ON');
+  initSqliteSchema(sqliteDb);
+  saveDb();
+
+  // Auto-save every 30 seconds
+  setInterval(() => saveDb(), 30000);
+
+  isPostgres = false;
+  return sqliteDb;
+}
+
+/**
+ * Create tables for PostgreSQL if they don't exist.
+ */
+async function initializePgSchema() {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -66,6 +107,8 @@ async function initializeSchema() {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         avatar_url TEXT,
+        reset_token TEXT,
+        reset_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -119,13 +162,9 @@ async function initializeSchema() {
       )
     `);
 
-    // Password reset columns — added safely to existing tables
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT
-    `);
-    await client.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP
-    `);
+    // Password reset columns — safe update
+    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT');
+    await client.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP');
 
     // Indexes
     await client.query('CREATE INDEX IF NOT EXISTS idx_rooms_code ON rooms(room_code)');
@@ -135,8 +174,7 @@ async function initializeSchema() {
     await client.query('CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)');
 
     await client.query('COMMIT');
-    console.log('✅ Database schema initialized');
-
+    console.log('✅ PostgreSQL schema initialized');
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -149,8 +187,23 @@ async function initializeSchema() {
  * Run a SELECT query and return all rows as an array of objects.
  */
 export async function queryAll(sql, params = []) {
-  const { rows } = await pool.query(toPgSql(sql), params);
-  return rows;
+  if (isPostgres && pool) {
+    const { rows } = await pool.query(toPgSql(sql), params);
+    return rows;
+  }
+
+  if (sqliteDb) {
+    const stmt = sqliteDb.prepare(sql);
+    stmt.bind(params);
+    const rows = [];
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return rows;
+  }
+
+  return [];
 }
 
 /**
@@ -165,21 +218,34 @@ export async function queryOne(sql, params = []) {
  * Run an INSERT / UPDATE / DELETE statement.
  */
 export async function runSql(sql, params = []) {
-  await pool.query(toPgSql(sql), params);
+  if (isPostgres && pool) {
+    await pool.query(toPgSql(sql), params);
+    return;
+  }
+
+  if (sqliteDb) {
+    sqliteDb.run(sql, params);
+    saveDb();
+  }
 }
 
 /**
- * Close the pool (called on shutdown).
+ * Close the database connection.
  */
 export function closeDb() {
   if (pool) {
     pool.end();
     pool = null;
   }
+  if (sqliteDb) {
+    saveDb();
+    sqliteDb.close();
+    sqliteDb = null;
+  }
 }
 
-// No-op — kept for compatibility
-export function saveDb() {}
-export function getDb() { return pool; }
+export function getDb() {
+  return isPostgres ? pool : sqliteDb;
+}
 
 export default getDb;

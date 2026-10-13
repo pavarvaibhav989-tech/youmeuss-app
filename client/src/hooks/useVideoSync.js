@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getSocket } from '../lib/socket';
 
 /**
  * Hook for video playback synchronization across room participants.
  */
-export function useVideoSync(roomId, isHost) {
+export function useVideoSync(roomId, _isHost) {
   const [videoUrl, setVideoUrl]   = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);

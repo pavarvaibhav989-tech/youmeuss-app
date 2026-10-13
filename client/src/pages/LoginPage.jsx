@@ -2,7 +2,7 @@ import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
-import { Eye, EyeSlash } from '@phosphor-icons/react';
+import { Eye, EyeSlash, ArrowRight } from '@phosphor-icons/react';
 import BrandSymbol from '../components/BrandSymbol';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
@@ -102,6 +102,10 @@ export default function LoginPage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div className="tag" style={{ margin: '0 auto 1rem', width: 'fit-content' }}>
+            <span className="status-dot" style={{ width: '6px', height: '6px' }} />
+            <span>Cinema Sync</span>
+          </div>
           <h1
             style={{
               fontFamily: 'var(--font-sans)',
@@ -120,11 +124,15 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Form card */}
+        {/* Form card with Double-Bezel */}
         <div
-          className="glass-elevated animate-scale-in"
-          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+          className="double-bezel animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '6px' }}
         >
+          <div
+            className="double-bezel-inner"
+            style={{ padding: '2rem' }}
+          >
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
             {/* Email */}
             <div>
@@ -218,10 +226,13 @@ export default function LoginPage() {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="btn-primary"
-              style={{ justifyContent: 'center', marginTop: '0.25rem' }}
+              className="btn-nested"
+              style={{ width: '100%', marginTop: '0.25rem' }}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              <span>{loading ? 'Signing in…' : 'Sign in'}</span>
+              <span className="btn-nested-icon">
+                <ArrowRight size={14} weight="bold" />
+              </span>
             </button>
           </form>
 
@@ -243,6 +254,7 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

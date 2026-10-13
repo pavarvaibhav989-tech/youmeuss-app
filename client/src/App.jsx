@@ -26,7 +26,7 @@ const FEATURES = [
   {
     Icon: FilmSlate,
     title: 'Synchronized playback',
-    desc: 'One press plays for everyone. No lag, no drift, no \"wait, where are you?\"',
+    desc: 'One press plays for everyone. No lag, no drift, no "wait, where are you?"',
     accent: 'rose',
     size: 'large', // spans more in the grid
   },
@@ -178,26 +178,36 @@ export default function App() {
                   id="create-room-btn"
                   onClick={createRoom}
                   disabled={creatingRoom}
-                  className="btn-primary"
-                  style={{ fontSize: '0.9375rem', padding: '0.8125rem 1.75rem' }}
+                  className="btn-nested"
+                  style={{ fontSize: '0.9375rem', padding: '0.625rem 0.75rem 0.625rem 1.6rem' }}
                 >
-                  {creatingRoom ? 'Creating…' : 'Create a room'}
-                  {!creatingRoom && <ArrowRight size={16} weight="bold" />}
+                  <span>{creatingRoom ? 'Creating…' : 'Create a room'}</span>
+                  <span className="btn-nested-icon" style={{ width: '32px', height: '32px' }}>
+                    <ArrowRight size={15} weight="bold" />
+                  </span>
                 </button>
               </div>
             </div>
 
-            {/* Right — join form panel */}
+            {/* Right — join form panel with Double-Bezel */}
             <div
-              className="glass animate-scale-in"
+              className="double-bezel animate-scale-in"
               style={{
                 borderRadius: 'var(--radius-xl)',
-                padding: '2rem',
+                padding: '6px',
                 animationDelay: '120ms',
                 position: 'relative',
                 overflow: 'hidden',
               }}
             >
+              <div
+                className="double-bezel-inner"
+                style={{
+                  padding: '2rem',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
               {/* Subtle rose ambient behind the card */}
               <div
                 aria-hidden
@@ -266,12 +276,14 @@ export default function App() {
 
                 <button
                   type="submit"
-                  className="btn-primary"
+                  className="btn-nested"
                   id="join-room-btn"
-                  style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}
+                  style={{ width: '100%', marginTop: '0.25rem' }}
                 >
-                  <Play size={15} weight="fill" />
-                  Join room
+                  <span>Join room</span>
+                  <span className="btn-nested-icon">
+                    <Play size={14} weight="fill" />
+                  </span>
                 </button>
               </form>
 
@@ -296,6 +308,7 @@ export default function App() {
               >
                 Start a new room
               </button>
+              </div>
             </div>
           </div>
         </section>

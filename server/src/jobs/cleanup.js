@@ -7,7 +7,7 @@
  */
 import { runSql, queryAll } from '../db/index.js';
 
-const INACTIVE_DAYS = 7;          // delete rooms older than this
+const INACTIVE_DAYS = 7;                   // delete rooms older than this
 const INTERVAL_MS   = 24 * 60 * 60 * 1000; // run every 24 hours
 
 /**
@@ -17,18 +17,20 @@ const INTERVAL_MS   = 24 * 60 * 60 * 1000; // run every 24 hours
  */
 export async function cleanupStaleRooms() {
   try {
-    // Find rooms where the most recent activity (message or creation) is older than INACTIVE_DAYS
+    const cutoffDate = new Date(Date.now() - INACTIVE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    // Cross-DB query compatible with both PostgreSQL and SQLite
     const stale = await queryAll(`
       SELECT r.id, r.room_code, r.created_at,
              MAX(m.created_at) AS last_message_at
       FROM rooms r
       LEFT JOIN messages m ON m.room_id = r.id
       GROUP BY r.id
-      HAVING COALESCE(MAX(m.created_at), r.created_at) < NOW() - INTERVAL '${INACTIVE_DAYS} days'
-    `);
+      HAVING COALESCE(MAX(m.created_at), r.created_at) < ?
+    `, [cutoffDate]);
 
     if (stale.length === 0) {
-      console.log(`🧹 Room cleanup: no stale rooms found`);
+      console.log('🧹 Room cleanup: no stale rooms found');
       return;
     }
 

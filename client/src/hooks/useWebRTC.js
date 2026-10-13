@@ -32,7 +32,7 @@ const ICE_SERVERS = {
  * Hook for WebRTC video/voice calling.
  * Manages peer connections, media streams, and signaling.
  */
-export function useWebRTC(roomId, userId) {
+export function useWebRTC(roomId, _userId) {
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState(new Map());
   const [isCallActive, setIsCallActive] = useState(false);
@@ -43,61 +43,18 @@ export function useWebRTC(roomId, userId) {
   const localStreamRef = useRef(null);
   const socketRef = useRef(null);
 
-  useEffect(() => {
-    const socket = getSocket();
-    socketRef.current = socket;
-
-    const handleWebRTCJoin = async ({ userId: remoteUserId, username }) => {
-      if (!localStreamRef.current) return;
-      await createPeerConnection(remoteUserId, true);
-    };
-
-    const handleOffer = async ({ userId: remoteUserId, offer }) => {
-      if (!localStreamRef.current) return;
-      const pc = await createPeerConnection(remoteUserId, false);
-      await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-
-      socket.emit('WEBRTC_ANSWER', {
-        roomId,
-        targetUserId: remoteUserId,
-        answer,
-      });
-    };
-
-    const handleAnswer = async ({ userId: remoteUserId, answer }) => {
-      const pc = peerConnections.current.get(remoteUserId);
-      if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      }
-    };
-
-    const handleIce = async ({ userId: remoteUserId, candidate }) => {
-      const pc = peerConnections.current.get(remoteUserId);
-      if (pc && candidate) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-    };
-
-    const handleWebRTCLeave = ({ userId: remoteUserId }) => {
-      closePeerConnection(remoteUserId);
-    };
-
-    socket.on('WEBRTC_JOIN', handleWebRTCJoin);
-    socket.on('WEBRTC_OFFER', handleOffer);
-    socket.on('WEBRTC_ANSWER', handleAnswer);
-    socket.on('WEBRTC_ICE', handleIce);
-    socket.on('WEBRTC_LEAVE', handleWebRTCLeave);
-
-    return () => {
-      socket.off('WEBRTC_JOIN', handleWebRTCJoin);
-      socket.off('WEBRTC_OFFER', handleOffer);
-      socket.off('WEBRTC_ANSWER', handleAnswer);
-      socket.off('WEBRTC_ICE', handleIce);
-      socket.off('WEBRTC_LEAVE', handleWebRTCLeave);
-    };
-  }, [roomId]);
+  const closePeerConnection = useCallback((remoteUserId) => {
+    const pc = peerConnections.current.get(remoteUserId);
+    if (pc) {
+      pc.close();
+      peerConnections.current.delete(remoteUserId);
+    }
+    setRemoteStreams((prev) => {
+      const next = new Map(prev);
+      next.delete(remoteUserId);
+      return next;
+    });
+  }, []);
 
   const createPeerConnection = useCallback(async (remoteUserId, createOffer) => {
     // Don't create duplicate connections
@@ -155,20 +112,63 @@ export function useWebRTC(roomId, userId) {
     }
 
     return pc;
-  }, [roomId]);
+  }, [roomId, closePeerConnection]);
 
-  const closePeerConnection = useCallback((remoteUserId) => {
-    const pc = peerConnections.current.get(remoteUserId);
-    if (pc) {
-      pc.close();
-      peerConnections.current.delete(remoteUserId);
-    }
-    setRemoteStreams((prev) => {
-      const next = new Map(prev);
-      next.delete(remoteUserId);
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    const handleWebRTCJoin = async ({ userId: remoteUserId }) => {
+      if (!localStreamRef.current) return;
+      await createPeerConnection(remoteUserId, true);
+    };
+
+    const handleOffer = async ({ userId: remoteUserId, offer }) => {
+      if (!localStreamRef.current) return;
+      const pc = await createPeerConnection(remoteUserId, false);
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      socket.emit('WEBRTC_ANSWER', {
+        roomId,
+        targetUserId: remoteUserId,
+        answer,
+      });
+    };
+
+    const handleAnswer = async ({ userId: remoteUserId, answer }) => {
+      const pc = peerConnections.current.get(remoteUserId);
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      }
+    };
+
+    const handleIce = async ({ userId: remoteUserId, candidate }) => {
+      const pc = peerConnections.current.get(remoteUserId);
+      if (pc && candidate) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    };
+
+    const handleWebRTCLeave = ({ userId: remoteUserId }) => {
+      closePeerConnection(remoteUserId);
+    };
+
+    socket.on('WEBRTC_JOIN', handleWebRTCJoin);
+    socket.on('WEBRTC_OFFER', handleOffer);
+    socket.on('WEBRTC_ANSWER', handleAnswer);
+    socket.on('WEBRTC_ICE', handleIce);
+    socket.on('WEBRTC_LEAVE', handleWebRTCLeave);
+
+    return () => {
+      socket.off('WEBRTC_JOIN', handleWebRTCJoin);
+      socket.off('WEBRTC_OFFER', handleOffer);
+      socket.off('WEBRTC_ANSWER', handleAnswer);
+      socket.off('WEBRTC_ICE', handleIce);
+      socket.off('WEBRTC_LEAVE', handleWebRTCLeave);
+    };
+  }, [roomId, createPeerConnection, closePeerConnection]);
 
   const startCall = useCallback(async () => {
     try {
@@ -210,7 +210,7 @@ export function useWebRTC(roomId, userId) {
     }
 
     // Close all peer connections
-    peerConnections.current.forEach((pc, id) => {
+    peerConnections.current.forEach((pc) => {
       pc.close();
     });
     peerConnections.current.clear();
@@ -246,11 +246,12 @@ export function useWebRTC(roomId, userId) {
 
   // Cleanup on unmount
   useEffect(() => {
+    const pcs = peerConnections.current;
     return () => {
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
-      peerConnections.current.forEach((pc) => pc.close());
+      pcs.forEach((pc) => pc.close());
     };
   }, []);
 

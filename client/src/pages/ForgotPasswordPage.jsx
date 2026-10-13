@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../components/Toast';
-import { EnvelopeSimple, ArrowLeft } from '@phosphor-icons/react';
+import { EnvelopeSimple, ArrowLeft, ArrowRight } from '@phosphor-icons/react';
 import BrandSymbol from '../components/BrandSymbol';
 import api from '../lib/api';
 
@@ -99,6 +99,10 @@ export default function ForgotPasswordPage() {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div className="tag" style={{ margin: '0 auto 1rem', width: 'fit-content' }}>
+            <span className="status-dot" style={{ width: '6px', height: '6px' }} />
+            <span>Account Recovery</span>
+          </div>
           <h1
             style={{
               fontFamily: 'var(--font-sans)',
@@ -117,11 +121,15 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {/* Card */}
+        {/* Card with Double-Bezel */}
         <div
-          className="glass-elevated animate-scale-in"
-          style={{ borderRadius: 'var(--radius-xl)', padding: '2rem' }}
+          className="double-bezel animate-scale-in"
+          style={{ borderRadius: 'var(--radius-xl)', padding: '6px' }}
         >
+          <div
+            className="double-bezel-inner"
+            style={{ padding: '2rem' }}
+          >
           {sent ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
               <div
@@ -206,6 +214,7 @@ export default function ForgotPasswordPage() {
               </p>
             </form>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -135,7 +135,7 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
 
     return () => {
       playerRef.current = null;
-      try { player?.destroy?.(); } catch (_) {}
+      try { player?.destroy?.(); } catch { /* ignore */ }
     };
   }, [ytId]);
 
@@ -144,7 +144,7 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
     if (!p || isHost) return;
     try {
       isPlaying ? p.playVideo() : p.pauseVideo();
-    } catch (_) {}
+    } catch { /* ignore */ }
   }, [isPlaying, isHost]);
 
   useEffect(() => {
@@ -153,7 +153,7 @@ function YouTubeEmbed({ ytId, isPlaying, currentTime, isSyncing, isHost, onPlay,
     try {
       const diff = Math.abs((p.getCurrentTime?.() ?? 0) - currentTime);
       if (diff > 1.5) p.seekTo(currentTime, true);
-    } catch (_) {}
+    } catch { /* ignore */ }
   }, [currentTime, isSyncing]);
 
   return (
@@ -257,11 +257,13 @@ function FileVideoPlayer({ cleanUrl, isPlaying, currentTime, isSyncing, isHost, 
  */
 function NativeVideoPlayer({ src, isSyncing }) {
   const videoRef = useRef(null);
+  const [prevSrc, setPrevSrc] = useState(src);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  if (src !== prevSrc) {
+    setPrevSrc(src);
     setError(false);
-  }, [src]);
+  }
 
   if (error) {
     return (
@@ -319,7 +321,6 @@ export default function VideoPlayer({
   onPlay,
   onPause,
   onSeek,
-  onProgress,
 }) {
   const cleanUrl = normalizeUrl(videoUrl);
   const ytId = getYouTubeId(cleanUrl);
