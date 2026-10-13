@@ -1,10 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    <linearGradient id="ym-fav-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#27272a" />
+      <stop offset="100%" stop-color="#09090b" />
     </linearGradient>
+
+    <linearGradient id="ym-fav-rose" x1="26" y1="16" x2="52" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="50%" stop-color="#f43f7e" />
+      <stop offset="100%" stop-color="#be123c" />
+    </linearGradient>
+
+    <linearGradient id="ym-fav-frost" x1="12" y1="16" x2="36" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08" />
+    </linearGradient>
+
+    <radialGradient id="ym-fav-glow" cx="36" cy="32" r="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f43f7e" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#f43f7e" stop-opacity="0" />
+    </radialGradient>
   </defs>
-  <circle cx="50" cy="50" r="46" fill="url(#grad)" />
-  <polygon points="40,28 40,72 75,50" fill="white" />
+
+  <!-- Squircle obsidian badge -->
+  <rect
+    x="2"
+    y="2"
+    width="60"
+    height="60"
+    rx="16"
+    fill="url(#ym-fav-bg)"
+    stroke="rgba(255, 255, 255, 0.16)"
+    stroke-width="1.5"
+  />
+
+  <!-- Ambient glow -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ym-fav-glow)" />
+
+  <!-- Left screen: 'You' (Frosted platinum glass) -->
+  <rect
+    x="13"
+    y="17"
+    width="23"
+    height="30"
+    rx="8"
+    fill="url(#ym-fav-frost)"
+    stroke="rgba(255, 255, 255, 0.35)"
+    stroke-width="1.5"
+  />
+
+  <!-- Right screen: 'Me' (Electric rose lens) -->
+  <rect
+    x="28"
+    y="17"
+    width="23"
+    height="30"
+    rx="8"
+    fill="url(#ym-fav-rose)"
+    fill-opacity="0.95"
+    stroke="#fda4af"
+    stroke-opacity="0.6"
+    stroke-width="1.5"
+  />
+
+  <!-- Central Play notch: 'Us' (Shared movie synchronization) -->
+  <path
+    d="M29.5 24.8C29.5 23.6 30.8 22.9 31.8 23.5L42.2 29.7C43.2 30.3 43.2 31.7 42.2 32.3L31.8 38.5C30.8 39.1 29.5 38.4 29.5 37.2Z"
+    fill="#ffffff"
+  />
 </svg>

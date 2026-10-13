@@ -1,7 +1,8 @@
 import { useState, lazy, Suspense } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '../components/Toast';
-import { FilmSlate, Key, CheckCircle, WarningCircle, Eye, EyeSlash } from '@phosphor-icons/react';
+import { Key, CheckCircle, WarningCircle, Eye, EyeSlash } from '@phosphor-icons/react';
+import BrandSymbol from '../components/BrandSymbol';
 import api from '../lib/api';
 
 const ParticleBackground = lazy(() => import('../components/ParticleBackground'));
@@ -169,19 +170,7 @@ export default function ResetPasswordPage() {
             justifyContent: 'center',
           }}
         >
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '9px',
-              background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FilmSlate size={16} color="white" weight="fill" />
-          </div>
+          <BrandSymbol size={34} />
           <span
             style={{
               fontFamily: 'var(--font-sans)',

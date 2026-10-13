@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { House, SignOut, ArrowLeft, UserCircle, FilmSlate } from '@phosphor-icons/react';
+import { House, SignOut, ArrowLeft, UserCircle } from '@phosphor-icons/react';
+import BrandSymbol from './BrandSymbol';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -38,25 +39,11 @@ export default function Navbar() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.625rem',
               textDecoration: 'none',
             }}
           >
-            <div
-              style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, var(--color-rose-500), var(--color-rose-700))',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--color-rose-600) 30%, transparent)',
-              }}
-            >
-              <FilmSlate size={15} color="white" weight="fill" />
-            </div>
+            <BrandSymbol size={30} />
             <span
               style={{
                 fontFamily: 'var(--font-sans)',
