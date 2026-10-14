@@ -25,7 +25,7 @@ function getYouTubeId(url) {
  * Strips tracking params from YouTube URLs.
  */
 function normalizeUrl(url) {
-  if (!url) return null;
+  if (!url || typeof url !== 'string') return null;
   // Blob URLs from file uploads — pass through as-is
   if (url.startsWith('blob:')) return url;
   const ytId = getYouTubeId(url);

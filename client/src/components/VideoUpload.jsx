@@ -2,7 +2,9 @@ import { useRef, useCallback, useState } from 'react';
 import { CloudArrowUp, FilmStrip, X } from '@phosphor-icons/react';
 import { useToast } from './Toast';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const SERVER_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== '')
+  ? import.meta.env.VITE_API_URL.trim().replace(/\/$/, '')
+  : (import.meta.env.PROD ? 'https://youmeuss-app.onrender.com' : 'http://localhost:3001');
 
 // Check file type by extension as fallback (file.type is unreliable on some OS/browsers)
 function isVideoFile(file) {
@@ -95,11 +97,14 @@ export default function VideoUpload({ roomId, onVideoLoaded }) {
         xhr.send(formData);
       });
 
-      // Success — build the full URL
-      const storageUrl = result.video.storage_url;
+      // Success — safely extract and build the full URL
+      const storageUrl = result?.video?.storage_url || result?.storage_url || result?.url;
+      if (!storageUrl || typeof storageUrl !== 'string') {
+        throw new Error('Video uploaded, but server did not return a valid URL.');
+      }
       const videoUrl = storageUrl.startsWith('http')
         ? storageUrl
-        : `${SERVER_URL}${storageUrl}`;
+        : `${SERVER_URL}${storageUrl.startsWith('/') ? '' : '/'}${storageUrl}`;
       console.log('[VideoUpload] Upload success, video URL:', videoUrl);
       onVideoLoaded(videoUrl);
       addToast(`Uploaded: ${file.name}`, 'success');

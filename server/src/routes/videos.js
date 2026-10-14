@@ -94,7 +94,7 @@ function getVideoUrl(req, file) {
  * POST /api/videos/upload
  */
 router.post('/upload', authenticate, (req, res) => {
-  upload.single('video')(req, res, (err) => {
+  upload.single('video')(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({ error: 'File too large. Maximum size is 2GB.' });
@@ -119,15 +119,18 @@ router.post('/upload', authenticate, (req, res) => {
       const id = uuidv4();
       const storage_url = getVideoUrl(req, req.file);
 
-      runSql(
+      await runSql(
         'INSERT INTO videos (id, room_id, uploaded_by, storage_url, original_name) VALUES (?, ?, ?, ?, ?)',
         [id, roomId, req.user.id, storage_url, req.file.originalname]
       );
 
-      const video = queryOne('SELECT * FROM videos WHERE id = ?', [id]);
+      const video = await queryOne('SELECT * FROM videos WHERE id = ?', [id]);
 
       console.log(`📹 Video uploaded: ${req.file.originalname} → ${storage_url}`);
-      res.status(201).json({ video });
+      res.status(201).json({
+        video: video || { id, room_id: roomId, storage_url, original_name: req.file.originalname },
+        storage_url,
+      });
     } catch (err) {
       console.error('Upload error:', err);
       res.status(500).json({ error: 'Internal server error' });
@@ -138,9 +141,9 @@ router.post('/upload', authenticate, (req, res) => {
 /**
  * GET /api/videos/:id
  */
-router.get('/:id', authenticate, (req, res) => {
+router.get('/:id', authenticate, async (req, res) => {
   try {
-    const video = queryOne('SELECT * FROM videos WHERE id = ?', [req.params.id]);
+    const video = await queryOne('SELECT * FROM videos WHERE id = ?', [req.params.id]);
 
     if (!video) {
       return res.status(404).json({ error: 'Video not found' });
