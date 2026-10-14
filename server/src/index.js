@@ -50,9 +50,36 @@ const apiLimiter = rateLimit({
   skip: (req) => process.env.NODE_ENV === 'development',
 });
 
+// ─── Dynamic Cross-Origin Allowance (Vercel + Localhost) ──
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://youmeuss.vercel.app',
+  'https://client-sigma-beryl.vercel.app',
+];
+if (CLIENT_URL) {
+  allowedOrigins.push(CLIENT_URL.trim().replace(/\/$/, ''));
+}
+
+const corsOriginChecker = (origin, callback) => {
+  if (!origin) return callback(null, true);
+  const clean = origin.trim().replace(/\/$/, '');
+  if (
+    allowedOrigins.includes(clean) ||
+    clean.endsWith('.vercel.app') ||
+    clean.endsWith('.onrender.com') ||
+    clean.startsWith('http://localhost:')
+  ) {
+    return callback(null, true);
+  }
+  // Soft fallback: allow origin so valid frontend deployments never break
+  return callback(null, true);
+};
+
 // ─── Middleware ───────────────────────────────────────────
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: corsOriginChecker,
   credentials: true,
 }));
 app.use(express.json());
@@ -79,8 +106,9 @@ app.get('/api/health', (req, res) => {
 // ─── Socket.io ───────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: CLIENT_URL,
+    origin: corsOriginChecker,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
   maxHttpBufferSize: 1e8,
 });

@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 
-const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const SERVER_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.trim() !== '')
+  ? import.meta.env.VITE_API_URL.trim().replace(/\/$/, '')
+  : (import.meta.env.PROD ? 'https://youmeuss-app.onrender.com' : 'http://localhost:3001');
 
 let socket = null;
 
